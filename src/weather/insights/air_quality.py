@@ -15,6 +15,7 @@ from weather.utils.plotting import (
     MUTED,
     SEQ_CMAP,
     SERIES,
+    legend_below,
     save,
 )
 
@@ -49,8 +50,7 @@ def air_quality_analysis(daily: pd.DataFrame) -> dict:
         ax.set_title(title, fontsize=10)
     fig.colorbar(im, ax=axes, shrink=0.85, label="Spearman ρ")
     fig.suptitle("Air pollutants vs. weather", x=0.01, ha="left", fontweight="bold")
-    fig.savefig(OUT / "airquality_weather_correlation.png", bbox_inches="tight")
-    plt.close(fig)
+    save(fig, OUT / "airquality_weather_correlation.png", tight=False)  # colorbar spans both axes
 
     # binned response curves
     fig, axes = plt.subplots(1, 3, figsize=(11, 3.3))
@@ -94,7 +94,7 @@ def air_quality_analysis(daily: pd.DataFrame) -> dict:
     ax.set_xlim(0, 100)
     ax.set_xlabel("% of observations")
     ax.grid(axis="y", visible=False)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=6, fontsize=7.5)
+    legend_below(fig, ax, ncol=6, fontsize=7.5)
     ax.set_title("US-EPA air-quality index by continent")
     save(fig, OUT / "airquality_epa_by_continent.png")
 

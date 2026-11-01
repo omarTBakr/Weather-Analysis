@@ -20,6 +20,7 @@ from weather.utils.plotting import (
     SEQ_CMAP,
     SERIES,
     apply_style,
+    legend_below,
     save,
 )
 
@@ -85,7 +86,7 @@ def temperature_figures(daily: pd.DataFrame, gs: pd.DataFrame) -> None:
     ax.plot(s.index, s, color=SERIES[0], alpha=0.35, linewidth=1, label="Daily mean")
     ax.plot(s.index, s.rolling(30, center=True).mean(), color=SERIES[0], linewidth=2, label="30-day rolling mean")
     ax.set_ylabel("°C")
-    ax.legend(loc="upper left", ncol=2)
+    legend_below(fig, ax, ncol=2)
     ax.set_title(f"Global mean temperature ({int(gs['n_locations'].median())} well-covered capitals)")
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
     save(fig, OUT / "global_temperature_trend.png")
@@ -103,7 +104,7 @@ def temperature_figures(daily: pd.DataFrame, gs: pd.DataFrame) -> None:
         ax.plot(m.index, m[c], color=CONTINENT_COLORS[c], label=c, marker="o", markersize=3)
     ax.set_xlim(m.index.min(), m.index.max() + pd.Timedelta(days=75))
     _end_labels(ax, {c: m[c] for c in CONTINENT_ORDER}, CONTINENT_COLORS)
-    ax.legend(loc="upper center", ncol=6, bbox_to_anchor=(0.5, -0.12))
+    legend_below(fig, ax, ncol=6)
     ax.set_ylabel("Monthly mean temperature (°C)")
     ax.set_title("Monthly mean temperature by continent")
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %y"))
@@ -114,7 +115,6 @@ def temperature_figures(daily: pd.DataFrame, gs: pd.DataFrame) -> None:
     fig, axes = plt.subplots(4, 1, figsize=(9, 6.6), sharex=True)
     axes[0].plot(dec.index, dec["observed"], color=SERIES[0], linewidth=1.1)
     axes[0].plot(dec.index, dec["fitted"], color=INK_2, linewidth=0.9, linestyle="--", label="model fit")
-    axes[0].legend(loc="upper right")
     axes[1].plot(
         dec.index, dec["trend_raw"], color=SERIES[1], label=f"naive trend ({dec.attrs['slope_raw']:+.2f} °C/yr)"
     )
@@ -124,7 +124,7 @@ def temperature_figures(daily: pd.DataFrame, gs: pd.DataFrame) -> None:
         color=SERIES[0],
         label=f"observation-hour adjusted ({dec.attrs['slope_adj']:+.2f} °C/yr)",
     )
-    axes[1].legend(loc="lower left")
+    legend_below(fig, [axes[0], axes[1]], ncol=3)
     axes[2].plot(dec.index, dec["seasonal"], color=SERIES[0], linewidth=1.2)
     axes[3].plot(dec.index, dec["resid"], color=MUTED, linewidth=0.9)
     for ax, name in zip(axes, ["Observed", "Trend", "Annual cycle", "Residual"], strict=False):
@@ -149,7 +149,7 @@ def temperature_figures(daily: pd.DataFrame, gs: pd.DataFrame) -> None:
     ax.set_ylabel("Local hour of snapshot")
     ax.set_ylim(0, 24)
     ax.set_yticks([0, 6, 12, 18, 24])
-    ax.legend(loc="upper right", ncol=2)
+    legend_below(fig, ax, ncol=2)
     ax.set_title("Local clock time of the daily snapshot drifts from afternoon to early morning")
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
     save(fig, OUT / "observation_hour_drift.png")
@@ -260,7 +260,7 @@ def cleaning_figure() -> None:
     ax.set_xscale("symlog")
     ax.grid(axis="y", visible=False)
     ax.set_xlabel("Rows affected (symlog scale)")
-    ax.legend(loc="lower right")
+    legend_below(fig, ax, ncol=2)
     ax.set_title("Data-quality corrections per variable")
     save(fig, OUT / "cleaning_corrections.png")
 

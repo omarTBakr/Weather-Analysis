@@ -18,7 +18,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
 from weather.utils.metrics import regression_metrics
-from weather.utils.plotting import INK_2, MUTED, SERIES, apply_style, save
+from weather.utils.plotting import INK_2, MUTED, SERIES, apply_style, legend_below, save
 
 S = get_settings()
 P = S.paths
@@ -157,13 +157,13 @@ def main() -> None:
         ax.axvline(test.index[0], color=MUTED, linewidth=0.8, linestyle=":")
         ax.annotate(
             "forecast origin",
-            (test.index[0], ax.get_ylim()[1]),
-            xytext=(4, -12),
+            (test.index[0], ax.get_ylim()[0]),  # bottom of the axis: the forecasts live in the upper half
+            xytext=(4, 4),
             textcoords="offset points",
             fontsize=8,
             color=INK_2,
         )
-        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3, fontsize=7.5)
+        legend_below(fig, ax, ncol=3, fontsize=7.5)
         ax.set_ylabel("°C")
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
         ax.set_title(f"Global mean temperature — {test_days}-day multi-step forecast vs. observed")
@@ -176,7 +176,7 @@ def main() -> None:
             fidx, fci[:, 0], fci[:, 1], color=SERIES[0], alpha=0.18, linewidth=0, label="95% prediction interval"
         )
         ax.plot(fidx, fut, color=SERIES[0], linewidth=2, label=f"forecast ({best.replace('_', ' ')})")
-        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3)
+        legend_below(fig, ax, ncol=3)
         ax.set_ylabel("°C")
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
         ax.set_title(f"Projected global mean temperature, next {gp.future_days} days")

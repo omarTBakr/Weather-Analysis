@@ -14,7 +14,7 @@ from sklearn.neighbors import LocalOutlierFactor
 
 from weather.analysis.decomposition import harmonic_decomposition
 from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
-from weather.utils.plotting import CONTINENT_ORDER, CRITICAL, INK_2, MUTED, SERIES, apply_style, save
+from weather.utils.plotting import CONTINENT_ORDER, CRITICAL, INK_2, MUTED, SERIES, apply_style, legend_below, save
 
 S = get_settings()
 P = S.paths
@@ -118,7 +118,7 @@ def main() -> None:
     ax.set_yticks(y, drv.index)
     ax.grid(axis="y", visible=False)
     ax.set_xlabel("Mean |deviation from the city's own climate| (σ)")
-    ax.legend(loc="lower right")
+    legend_below(fig, ax, ncol=2)
     ax.set_title("What makes an observation anomalous")
     save(fig, OUT / "anomaly_drivers.png")
 
@@ -139,7 +139,7 @@ def main() -> None:
         ax.bar(np.arange(len(rates)) + (i - 1) * w, rates[col], width=w - 0.02, color=SERIES[i], label=col)
     ax.set_xticks(range(len(rates)), rates.index)
     ax.set_ylabel("% of observations flagged")
-    ax.legend(ncol=3, loc="upper left")
+    legend_below(fig, ax, ncol=3)
     ax.grid(axis="x", visible=False)
     ax.set_title("Anomaly rate by continent and detector")
     save(fig, OUT / "anomaly_rate_by_continent.png")
@@ -149,11 +149,20 @@ def main() -> None:
     proj = pca.transform(z.iloc[sample_idx])
     f = iso_s.to_numpy()
     fig, ax = plt.subplots(figsize=(6.5, 5))
-    ax.scatter(proj[~f, 0], proj[~f, 1], s=3, color=MUTED, alpha=0.25, linewidths=0, label="normal")
-    ax.scatter(proj[f, 0], proj[f, 1], s=10, color=CRITICAL, alpha=0.8, linewidths=0, label="Isolation-Forest anomaly")
+    ax.scatter(proj[~f, 0], proj[~f, 1], s=3, color=MUTED, alpha=0.25, linewidths=0, label="normal", rasterized=True)
+    ax.scatter(
+        proj[f, 0],
+        proj[f, 1],
+        s=10,
+        color=CRITICAL,
+        alpha=0.8,
+        linewidths=0,
+        label="Isolation-Forest anomaly",
+        rasterized=True,
+    )
     ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.0%} var.)")
     ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.0%} var.)")
-    ax.legend(loc="upper right", markerscale=2)
+    legend_below(fig, ax, ncol=2, markerscale=2)
     ax.set_title("Anomalies in the space of locally standardised weather")
     save(fig, OUT / "anomaly_pca.png")
 
@@ -180,7 +189,7 @@ def main() -> None:
             color=INK_2,
         )
     ax.set_ylabel("°C")
-    ax.legend(loc="upper right")
+    legend_below(fig, ax, ncol=2)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
     ax.set_title("Global-scale anomalies (residual of harmonic model)")
     save(fig, OUT / "global_anomalies.png")
@@ -229,7 +238,7 @@ def main() -> None:
         label="temporal anomaly",
     )
     ax.set_ylabel("°C")
-    ax.legend(loc="upper right")
+    legend_below(fig, ax, ncol=2)
     ax.set_title(f"Temporal anomalies — {top_city} (most flagged location)")
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
     save(fig, OUT / "city_temporal_anomalies.png")
@@ -243,7 +252,7 @@ def main() -> None:
     ax.plot(mon.index, mon["iso_flag"], color=SERIES[0], marker="o", markersize=3, label="Isolation Forest")
     ax.plot(mon.index, mon["temporal_flag"], color=SERIES[1], marker="o", markersize=3, label="Temporal robust-z")
     ax.set_ylabel("% flagged")
-    ax.legend(loc="upper left", ncol=2)
+    legend_below(fig, ax, ncol=2)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
     ax.set_title("Share of anomalous observations per month")
     save(fig, OUT / "anomaly_rate_monthly.png")

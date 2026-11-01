@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 
 from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
 from weather.utils.metrics import regression_metrics
-from weather.utils.plotting import CONTINENT_ORDER, INK_2, MUTED, SEQ_CMAP, SERIES, apply_style, save
+from weather.utils.plotting import CONTINENT_ORDER, INK_2, MUTED, SEQ_CMAP, SERIES, apply_style, legend_below, save
 
 S = get_settings()
 P = S.paths
@@ -148,7 +148,8 @@ def main() -> None:
     ax.plot(daily_err.index, daily_err["persistence"], color=MUTED, label=PRETTY["persistence"])
     ax.plot(daily_err.index, daily_err[best_overall], color=SERIES[1], label=PRETTY[best_overall])
     ax.set_ylabel("Cross-city RMSE (°C)")
-    ax.legend(loc="upper left", ncol=2)
+    legend_below(fig, ax, ncol=2)
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=7))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
     ax.set_title("Daily forecast error over the test window")
     save(fig, OUT / "daily_error_test.png")
@@ -162,8 +163,9 @@ def main() -> None:
         ax.plot(g["target_date"], g[f"pred_{best_overall}"], color=SERIES[1], linewidth=1.5, label="ensemble forecast")
         ax.set_title(c, fontsize=10)
         ax.set_ylabel("°C")
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator(maxticks=5))
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
-    axes.flat[0].legend(loc="best", fontsize=7.5)
+    legend_below(fig, axes.flat[0], ncol=2)
     fig.suptitle("Next-day forecasts on the test window — example capitals", x=0.01, ha="left", fontweight="bold")
     save(fig, OUT / "city_forecasts.png")
 

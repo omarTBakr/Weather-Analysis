@@ -36,7 +36,8 @@ def apply_style() -> None:
             "axes.facecolor": SURFACE,
             "savefig.facecolor": SURFACE,
             "figure.dpi": 110,
-            "savefig.dpi": 160,
+            "savefig.dpi": 300,  # PNG (README) resolution; LaTeX uses the vector PDF
+            "pdf.fonttype": 42,  # embed TrueType so text stays selectable/searchable in the PDF
             "font.family": "sans-serif",
             "font.size": 9.5,
             "axes.titlesize": 11,
@@ -65,9 +66,54 @@ def apply_style() -> None:
     )
 
 
-def save(fig, path: Path) -> Path:
+def legend_below(fig, axes=None, ncol: int | None = None, **kwargs):
+    """Figure-level legend placed *underneath* the plot area, so it can never cover data.
+
+    Handles are collected from `axes` (an Axes, a list of Axes, or all axes of the figure) and de-duplicated
+    by label. The legend's top edge sits at the bottom of the figure (below tick labels and x-labels, which
+    `tight_layout` keeps inside the figure); `bbox_inches="tight"` in `save` then grows the canvas to include it.
+    """
+    if axes is None:
+        axes = fig.axes
+    elif not isinstance(axes, list | tuple):
+        axes = [axes]
+    handles, labels = [], []
+    for ax in axes:
+        for h, lab in zip(*ax.get_legend_handles_labels(), strict=True):
+            if lab and not lab.startswith("_") and lab not in labels:
+                handles.append(h)
+                labels.append(lab)
+    if not handles:
+        return None
+    ncol = ncol or min(len(labels), 4)
+    fig._legend_below = dict(handles=handles, labels=labels, ncol=ncol, **kwargs)  # placed in save()
+    return fig._legend_below
+
+
+def _place_legend_below(fig) -> None:
+    spec = getattr(fig, "_legend_below", None)
+    if spec:
+        fig.legend(
+            spec["handles"],
+            spec["labels"],
+            loc="upper center",
+            bbox_to_anchor=(0.5, 0.0),
+            ncol=spec["ncol"],
+            frameon=False,
+            **{k: v for k, v in spec.items() if k not in {"handles", "labels", "ncol"}},
+        )
+
+
+def save(fig, path: Path, tight: bool = True) -> Path:
+    """Write the figure as a 300-dpi PNG (README / MLflow) and a vector PDF with the same stem (LaTeX report).
+
+    `\\includegraphics{name}` without an extension makes pdflatex pick the PDF.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
+    if tight:
+        fig.tight_layout()
+    _place_legend_below(fig)  # after tight_layout so the legend is laid out below the finished axes
     fig.savefig(path, bbox_inches="tight")
+    fig.savefig(path.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
     return path

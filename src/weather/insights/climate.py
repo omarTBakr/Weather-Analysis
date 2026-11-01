@@ -15,6 +15,7 @@ from weather.utils.plotting import (
     INK_2,
     MUTED,
     SERIES,
+    legend_below,
     save,
 )
 
@@ -85,7 +86,7 @@ def climate_analysis(daily: pd.DataFrame) -> dict:
     ax.invert_yaxis()
     ax.grid(axis="y", visible=False)
     ax.set_xlabel("Temperature trend across cities (°C per year)")
-    ax.legend(loc="lower right", fontsize=8)
+    legend_below(fig, ax, ncol=2)
     ax.set_title("Short-term temperature trend by continent: naive vs. hour-adjusted")
     save(fig, OUT / "climate_trend_by_continent.png")
 
@@ -137,18 +138,20 @@ def climate_analysis(daily: pd.DataFrame) -> dict:
             linewidth=0.8,
             alpha=0.9,
         )
-    for _, r in tr.nlargest(4, "annual_amplitude").iterrows():
+    # alternate label sides so neighbouring extremes (e.g. Bishkek / Pyongyang) don't collide
+    for i, (_, r) in enumerate(tr.nlargest(4, "annual_amplitude").iterrows()):
         ax.annotate(
             r["location_name"],
             (abs(r["latitude"]), r["annual_amplitude"]),
-            xytext=(5, 2),
+            xytext=(6, 2) if i % 2 == 0 else (-6, 2),
+            ha="left" if i % 2 == 0 else "right",
             textcoords="offset points",
             fontsize=7.5,
             color=INK_2,
         )
     ax.set_xlabel("|Latitude| (°)")
     ax.set_ylabel("Annual temperature range (°C)")
-    ax.legend(loc="upper left", ncol=2, fontsize=7.5)
+    legend_below(fig, ax, ncol=6)
     ax.set_title("Seasonal amplitude grows with latitude and continentality")
     save(fig, OUT / "climate_amplitude_vs_latitude.png")
 

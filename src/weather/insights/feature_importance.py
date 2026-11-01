@@ -87,15 +87,17 @@ def feature_importance() -> dict:
 
     shap.summary_plot(sv, Xshap, max_display=15, show=False, plot_size=(8, 5.5))
     plt.gcf().suptitle("SHAP summary — LightGBM next-day temperature model", x=0.01, ha="left", fontweight="bold")
-    plt.savefig(OUT / "feature_importance_shap_summary.png", bbox_inches="tight", dpi=160)
-    plt.close("all")
+    for coll in plt.gca().collections:  # thousands of beeswarm dots -> raster layer inside the vector PDF
+        coll.set_rasterized(True)
+    save(plt.gcf(), OUT / "feature_importance_shap_summary.png", tight=False)
 
     for f in ["hour_cos", "pressure_diff1"]:
         if f in cols:
             shap.dependence_plot(f, sv, Xshap, interaction_index=None, show=False, color=SERIES[0])
             plt.title(f"SHAP dependence — {f}", loc="left", fontweight="bold", fontsize=11)
-            plt.savefig(OUT / f"feature_importance_shap_dependence_{f}.png", bbox_inches="tight", dpi=160)
-            plt.close("all")
+            for coll in plt.gca().collections:
+                coll.set_rasterized(True)
+            save(plt.gcf(), OUT / f"feature_importance_shap_dependence_{f}.png", tight=False)
     return {
         "fi_top_feature": table.index[0],
         "fi_top5": ", ".join(table.index[:5]),
