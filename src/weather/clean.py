@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from weather.config import CLEAN_PATH, METRICS, ROOT, ensure_dirs, load_params, setup_mlflow
+from weather.utils.config import CleanSettings, ensure_dirs, get_settings, setup_mlflow
+
+S = get_settings()
+P = S.paths
 
 # Imperial duplicates of metric columns carry no extra information.
 REDUNDANT = [
@@ -170,7 +174,9 @@ WEATHER_COLS = [
 ]
 
 
-def null_corrupted_days(df: pd.DataFrame, threshold: float, report: dict) -> pd.DataFrame:
+def null_corrupted_days(
+    df: pd.DataFrame, threshold: float, report: dict, deviation_csv: Path | None = None
+) -> pd.DataFrame:
     """Detect whole-batch provider glitches (e.g. Riyadh at 15 degC in August) and null that day's weather values.
 
     Statistic: per date, the median over all cities of |temperature - city's centred 15-day rolling median|.
@@ -181,7 +187,8 @@ def null_corrupted_days(df: pd.DataFrame, threshold: float, report: dict) -> pd.
         lambda s: s.rolling(15, center=True, min_periods=5).median()
     )
     day_dev = (df["temperature_celsius"] - med).abs().groupby(df["date"]).median()
-    day_dev.rename("median_abs_dev_c").to_csv(METRICS / "daily_batch_deviation.csv")
+    if deviation_csv is not None:
+        day_dev.rename("median_abs_dev_c").to_csv(deviation_csv)
     bad = day_dev[day_dev > threshold]
     df.loc[df["date"].isin(bad.index), WEATHER_COLS] = np.nan
     report["corrupted_days"] = {str(d.date()): round(float(v), 2) for d, v in bad.items()}
@@ -229,8 +236,7 @@ def impute(df: pd.DataFrame, limit: int, report: dict) -> pd.DataFrame:
     return df
 
 
-def clean(raw: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, dict]:
-    cp = params["clean"]
+def clean(raw: pd.DataFrame, cp: CleanSettings) -> tuple[pd.DataFrame, dict]:
     report: dict = {
         "raw_rows": len(raw),
         "raw_locations": int(raw["location_name"].nunique()),
@@ -250,8 +256,8 @@ def clean(raw: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, dict]:
     report["exact_duplicates_removed"] = n - len(df)
 
     counts = df.groupby("location_name")["date"].nunique()
-    keep = counts[counts >= cp["min_obs_per_location"]].index
-    report["locations_dropped_low_coverage"] = int((counts < cp["min_obs_per_location"]).sum())
+    keep = counts[counts >= cp.min_obs_per_location].index
+    report["locations_dropped_low_coverage"] = int((counts < cp.min_obs_per_location).sum())
     df = df[df["location_name"].isin(keep)].copy()
     report["rows_dropped_low_coverage"] = int(n - report["exact_duplicates_removed"] - len(df))
 
@@ -265,9 +271,9 @@ def clean(raw: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, dict]:
     report["same_day_duplicates_removed"] = n - len(df)
 
     df = apply_valid_ranges(df, report)
-    df = null_corrupted_days(df, cp["corrupt_day_threshold_c"], report)
-    df = cap_outliers(df, cp["iqr_k"], cp["heavy_tail_quantile"], report)
-    df = impute(df, cp["interpolate_limit"], report)
+    df = null_corrupted_days(df, cp.corrupt_day_threshold_c, report, P.metrics / "daily_batch_deviation.csv")
+    df = cap_outliers(df, cp.iqr_k, cp.heavy_tail_quantile, report)
+    df = impute(df, cp.interpolate_limit, report)
 
     report.update(
         {
@@ -284,18 +290,17 @@ def clean(raw: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, dict]:
 
 def main() -> None:
     ensure_dirs()
-    params = load_params()
-    raw = pd.read_csv(ROOT / params["data"]["raw_path"])
-    df, report = clean(raw, params)
-    df.to_parquet(CLEAN_PATH, index=False)
-    (METRICS / "clean_report.json").write_text(json.dumps(report, indent=2, default=str))
+    raw = pd.read_csv(S.raw_csv)
+    df, report = clean(raw, S.clean)
+    df.to_parquet(P.clean_path, index=False)
+    (P.metrics / "clean_report.json").write_text(json.dumps(report, indent=2, default=str))
 
     mlflow = setup_mlflow()
     with mlflow.start_run(run_name="clean"):
         mlflow.set_tag("stage", "clean")
-        mlflow.log_params(params["clean"])
+        mlflow.log_params(S.flat("clean"))
         mlflow.log_metrics({k: v for k, v in report.items() if isinstance(v, (int, float))})
-        mlflow.log_artifact(str(METRICS / "clean_report.json"))
+        mlflow.log_artifact(str(P.metrics / "clean_report.json"))
     print(json.dumps(report, indent=2, default=str))
 
 

@@ -10,16 +10,6 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-from weather.config import (
-    CLEAN_PATH,
-    DAILY_PATH,
-    FIGURES,
-    GLOBAL_SERIES_PATH,
-    METRICS,
-    TABLES,
-    ensure_dirs,
-    setup_mlflow,
-)
 from weather.plotting import (
     CONTINENT_COLORS,
     CONTINENT_ORDER,
@@ -31,8 +21,12 @@ from weather.plotting import (
     apply_style,
     save,
 )
+from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
 
-OUT = FIGURES / "eda"
+S = get_settings()
+P = S.paths
+
+OUT = P.figures / "eda"
 CORR_COLS = {
     "temperature_celsius": "Temperature",
     "feels_like_celsius": "Feels like",
@@ -291,7 +285,7 @@ def condition_figure(clean: pd.DataFrame) -> None:
 
 
 def cleaning_figure() -> None:
-    rep = json.loads((METRICS / "clean_report.json").read_text())
+    rep = json.loads((P.metrics / "clean_report.json").read_text())
     inv = pd.Series(rep["invalid_set_to_nan"])
     cap = pd.Series(rep["outliers_capped"])
     df = pd.DataFrame({"Physically invalid → imputed": inv, "Outlier → capped": cap}).fillna(0)
@@ -313,9 +307,9 @@ def main() -> None:
     ensure_dirs()
     apply_style()
     OUT.mkdir(parents=True, exist_ok=True)
-    clean = pd.read_parquet(CLEAN_PATH)
-    daily = pd.read_parquet(DAILY_PATH)
-    gs = pd.read_parquet(GLOBAL_SERIES_PATH)
+    clean = pd.read_parquet(P.clean_path)
+    daily = pd.read_parquet(P.daily_path)
+    gs = pd.read_parquet(P.global_series_path)
 
     summary = (
         daily[list(CORR_COLS)]
@@ -325,9 +319,9 @@ def main() -> None:
         .rename(columns={"50%": "median"})
     )
     summary.index = [CORR_COLS[c] for c in summary.index]
-    summary.to_csv(TABLES / "summary_statistics.csv")
+    summary.to_csv(P.tables / "summary_statistics.csv")
     summary.to_latex(
-        TABLES / "summary_statistics.tex",
+        P.tables / "summary_statistics.tex",
         float_format="%.2f",
         caption="Summary statistics of the cleaned daily panel.",
         label="tab:summary",
@@ -341,7 +335,7 @@ def main() -> None:
     cleaning_figure()
     metrics["corr_temp_humidity"] = float(corr.loc["Temperature", "Humidity"])
     metrics["corr_temp_uv"] = float(corr.loc["Temperature", "UV index"])
-    (METRICS / "eda.json").write_text(json.dumps(metrics, indent=2))
+    (P.metrics / "eda.json").write_text(json.dumps(metrics, indent=2))
 
     mlflow = setup_mlflow()
     with mlflow.start_run(run_name="eda"):

@@ -9,17 +9,10 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from weather.config import (
-    CLEAN_PATH,
-    DAILY_PATH,
-    FEATURES_PATH,
-    GLOBAL_SERIES_PATH,
-    METRICS,
-    MODELS,
-    ensure_dirs,
-    load_params,
-    setup_mlflow,
-)
+from weather.utils.config import FeatureSettings, ensure_dirs, get_settings, setup_mlflow
+
+S = get_settings()
+P = S.paths
 
 STATIC = ["country", "continent", "latitude", "longitude", "timezone"]
 DAILY_NUMERIC = [
@@ -63,8 +56,8 @@ def build_daily(clean: pd.DataFrame, limit: int) -> pd.DataFrame:
     return daily.dropna(subset=["temperature_celsius"]).reset_index(drop=True)
 
 
-def add_features(daily: pd.DataFrame, fp: dict) -> tuple[pd.DataFrame, list[str]]:
-    target, h = fp["target"], fp["horizon"]
+def add_features(daily: pd.DataFrame, fp: FeatureSettings) -> tuple[pd.DataFrame, list[str]]:
+    target, h = fp.target, fp.horizon
     frames = []
     for _, g in daily.groupby("location_name", sort=False):
         # re-grid so that shifts are calendar-exact even across long gaps
@@ -72,13 +65,13 @@ def add_features(daily: pd.DataFrame, fp: dict) -> tuple[pd.DataFrame, list[str]
         t = g[target]
         f = pd.DataFrame(index=g.index)
         f["temp_t"] = t
-        for k in fp["lags"]:
+        for k in fp.lags:
             f[f"temp_lag{k}"] = t.shift(k)
-        for w in fp["rolling_windows"]:
+        for w in fp.rolling_windows:
             f[f"temp_rollmean{w}"] = t.rolling(w, min_periods=w).mean()
             f[f"temp_rollstd{w}"] = t.rolling(w, min_periods=w).std()
         f["temp_diff1"] = t - t.shift(1)
-        for c in fp["exog"]:
+        for c in fp.exog:
             f[c] = g[c]
         f["humidity_diff1"] = g["humidity"] - g["humidity"].shift(1)
         f["pressure_diff1"] = g["pressure_mb"] - g["pressure_mb"].shift(1)
@@ -144,24 +137,23 @@ def build_global_series(daily: pd.DataFrame, min_coverage: float) -> pd.DataFram
 
 def main() -> None:
     ensure_dirs()
-    params = load_params()
-    fp, sp = params["features"], params["split"]
-    clean = pd.read_parquet(CLEAN_PATH)
+    fp, sp = S.features, S.split
+    clean = pd.read_parquet(P.clean_path)
 
-    daily = build_daily(clean, params["clean"]["interpolate_limit"])
-    daily.to_parquet(DAILY_PATH, index=False)
+    daily = build_daily(clean, S.clean.interpolate_limit)
+    daily.to_parquet(P.daily_path, index=False)
 
     feat, feature_cols = add_features(daily, fp)
-    feat = time_split(feat, sp["test_days"], sp["val_days"])
+    feat = time_split(feat, sp.test_days, sp.val_days)
 
     # Normalisation: fit on the training window only (no leakage), persisted for linear models / anomaly detection
     scaler = StandardScaler().fit(feat.loc[feat["split"] == "train", feature_cols])
-    joblib.dump(scaler, MODELS / "scaler.joblib")
-    (MODELS / "feature_columns.json").write_text(json.dumps(feature_cols, indent=2))
-    feat.to_parquet(FEATURES_PATH, index=False)
+    joblib.dump(scaler, P.models / "scaler.joblib")
+    (P.models / "feature_columns.json").write_text(json.dumps(feature_cols, indent=2))
+    feat.to_parquet(P.features_path, index=False)
 
-    gs = build_global_series(daily, params["global_series"]["min_coverage"])
-    gs.to_parquet(GLOBAL_SERIES_PATH, index=False)
+    gs = build_global_series(daily, S.global_series.min_coverage)
+    gs.to_parquet(P.global_series_path, index=False)
 
     split_info = {
         s: {
@@ -179,12 +171,17 @@ def main() -> None:
         "global_series_locations": int(gs["n_locations"].median()),
         "split": split_info,
     }
-    (METRICS / "features_report.json").write_text(json.dumps(report, indent=2))
+    (P.metrics / "features_report.json").write_text(json.dumps(report, indent=2))
 
     mlflow = setup_mlflow()
     with mlflow.start_run(run_name="features"):
         mlflow.set_tag("stage", "features")
-        mlflow.log_params({**{f"features.{k}": v for k, v in fp.items()}, **{f"split.{k}": v for k, v in sp.items()}})
+        mlflow.log_params(
+            {
+                **{f"features.{k}": v for k, v in fp.model_dump().items()},
+                **{f"split.{k}": v for k, v in sp.model_dump().items()},
+            }
+        )
         mlflow.log_metrics(
             {
                 "feature_rows": len(feat),
@@ -192,8 +189,8 @@ def main() -> None:
                 **{f"{s}_rows": v["rows"] for s, v in split_info.items()},
             }
         )
-        mlflow.log_artifact(str(MODELS / "feature_columns.json"))
-        mlflow.log_artifact(str(METRICS / "features_report.json"))
+        mlflow.log_artifact(str(P.models / "feature_columns.json"))
+        mlflow.log_artifact(str(P.metrics / "features_report.json"))
     print(json.dumps(report, indent=2))
 
 

@@ -10,21 +10,14 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from weather.config import (
-    FEATURES_PATH,
-    FIGURES,
-    METRICS,
-    MODELS,
-    PREDICTIONS_PATH,
-    ROOT,
-    TABLES,
-    ensure_dirs,
-    setup_mlflow,
-)
 from weather.metrics import regression_metrics
 from weather.plotting import CONTINENT_ORDER, INK_2, MUTED, SEQ_CMAP, SERIES, apply_style, save
+from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
 
-OUT = FIGURES / "forecast_panel"
+S = get_settings()
+P = S.paths
+
+OUT = P.figures / "forecast_panel"
 MEMBERS = ["ridge", "random_forest", "xgboost", "lightgbm"]
 PRETTY = {
     "persistence": "Persistence (baseline)",
@@ -42,7 +35,7 @@ def main() -> None:
     ensure_dirs()
     apply_style()
     OUT.mkdir(parents=True, exist_ok=True)
-    preds = pd.read_parquet(PREDICTIONS_PATH)
+    preds = pd.read_parquet(P.predictions_path)
     va, te = preds[preds["split"] == "val"], preds[preds["split"] == "test"].copy()
 
     val_rmse = {m: regression_metrics(va["target"], va[f"pred_{m}"])["rmse"] for m in MEMBERS}
@@ -68,7 +61,7 @@ def main() -> None:
     tbl["skill_vs_persistence_pct"] = pd.Series(skill) * 100
     tbl["val_rmse"] = pd.Series({n: val_metrics[n]["rmse"] for n in names})
     tbl.index = [PRETTY[n] for n in tbl.index]
-    tbl.to_csv(TABLES / "model_comparison.csv")
+    tbl.to_csv(P.tables / "model_comparison.csv")
     tbl.rename(
         columns={
             "mae": "MAE",
@@ -80,7 +73,7 @@ def main() -> None:
             "val_rmse": "Val RMSE",
         }
     ).to_latex(
-        TABLES / "model_comparison.tex",
+        P.tables / "model_comparison.tex",
         float_format="%.3f",
         escape=False,
         caption="Next-day temperature forecast accuracy on the 60-day test window (all cities). "
@@ -98,7 +91,7 @@ def main() -> None:
         }
     ).T
     cont = cont[CONTINENT_ORDER]
-    cont.to_csv(TABLES / "rmse_by_continent.csv")
+    cont.to_csv(P.tables / "rmse_by_continent.csv")
 
     # figures ------------------------------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(8, 3.8))
@@ -175,13 +168,13 @@ def main() -> None:
     save(fig, OUT / "city_forecasts.png")
 
     # MLflow: log + register the stacking ensemble as a pyfunc model --------------------------------
-    feature_cols = json.loads((MODELS / "feature_columns.json").read_text())
+    feature_cols = json.loads((P.models / "feature_columns.json").read_text())
     cfg = {
         "weights": {k: float(v) for k, v in w_stack.items() if v > 0},
         "intercept": float(stack.intercept_),
         "feature_columns": feature_cols,
     }
-    (MODELS / "ensemble_config.json").write_text(json.dumps(cfg, indent=2))
+    (P.models / "ensemble_config.json").write_text(json.dumps(cfg, indent=2))
     mlflow = setup_mlflow()
     with mlflow.start_run(run_name="ensemble"):
         mlflow.set_tags({"stage": "ensemble", "best_single": best_single, "best_overall": best_overall})
@@ -193,25 +186,25 @@ def main() -> None:
         for n in ["ens_mean", "ens_weighted", "ens_stacking"]:
             mlflow.log_metrics({f"{n}_test_{k}": v for k, v in test_metrics[n].items() if np.isfinite(v)})
         mlflow.log_artifacts(str(OUT), artifact_path="figures")
-        mlflow.log_artifact(str(TABLES / "model_comparison.csv"))
+        mlflow.log_artifact(str(P.tables / "model_comparison.csv"))
 
         from mlflow.models import infer_signature
 
         from weather.ensemble_model import WeightedEnsemble
 
-        feat = pd.read_parquet(FEATURES_PATH, columns=feature_cols + ["split"])
+        feat = pd.read_parquet(P.features_path, columns=feature_cols + ["split"])
         example = feat[feat["split"] == "test"][feature_cols].astype("float64").head(200)
-        artifacts = {"config": str(MODELS / "ensemble_config.json")} | {
-            n: str(MODELS / f"{n}.joblib") for n in cfg["weights"]
+        artifacts = {"config": str(P.models / "ensemble_config.json")} | {
+            n: str(P.models / f"{n}.joblib") for n in cfg["weights"]
         }
         model = WeightedEnsemble()
         info = mlflow.pyfunc.log_model(
             name="model",
             python_model=model,
             artifacts=artifacts,
-            code_paths=[str(ROOT / "src" / "weather")],
+            code_paths=[str(P.root / "src" / "weather")],
             input_example=example.head(5),
-            registered_model_name="weather-temp-ensemble",
+            registered_model_name=f"{S.mlflow.registered_model_prefix}-ensemble",
             signature=infer_signature(example, np.zeros(len(example))),
         )
         # sanity: the served model reproduces the offline stacking prediction
@@ -232,7 +225,7 @@ def main() -> None:
         "best_single": best_single,
         "best_overall": best_overall,
     }
-    (METRICS / "ensemble.json").write_text(json.dumps(out, indent=2))
+    (P.metrics / "ensemble.json").write_text(json.dumps(out, indent=2))
     print(tbl.round(3).to_string())
     print("stacking weights:", w_stack, "intercept", round(float(stack.intercept_), 3))
 

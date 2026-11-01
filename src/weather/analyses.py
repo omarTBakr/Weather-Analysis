@@ -13,18 +13,6 @@ from matplotlib.colors import to_hex
 from sklearn.feature_selection import mutual_info_regression
 from sklearn.inspection import permutation_importance
 
-from weather.config import (
-    DAILY_PATH,
-    FEATURES_PATH,
-    FIGURES,
-    MAPS,
-    METRICS,
-    MODELS,
-    TABLES,
-    ensure_dirs,
-    load_params,
-    setup_mlflow,
-)
 from weather.plotting import (
     CONTINENT_COLORS,
     CONTINENT_ORDER,
@@ -36,8 +24,12 @@ from weather.plotting import (
     apply_style,
     save,
 )
+from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
 
-OUT = FIGURES / "analyses"
+S = get_settings()
+P = S.paths
+
+OUT = P.figures / "analyses"
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 POLLUTANTS = {"aq_pm25": "PM2.5", "aq_pm10": "PM10", "aq_o3": "O3", "aq_no2": "NO2", "aq_so2": "SO2", "aq_co": "CO"}
 WEATHER = {
@@ -95,7 +87,7 @@ def location_trends(daily: pd.DataFrame) -> pd.DataFrame:
 
 def climate_analysis(daily: pd.DataFrame) -> dict:
     tr = location_trends(daily)
-    tr.to_csv(TABLES / "location_climate_trends.csv", index=False)
+    tr.to_csv(P.tables / "location_climate_trends.csv", index=False)
 
     # trend: naive vs hour-adjusted, by continent
     fig, ax = plt.subplots(figsize=(8, 3.6))
@@ -197,7 +189,7 @@ def climate_analysis(daily: pd.DataFrame) -> dict:
 
 
 # ------------------------------------------------------------------------------------------- air quality
-def air_quality_analysis(daily: pd.DataFrame, params: dict) -> dict:
+def air_quality_analysis(daily: pd.DataFrame) -> dict:
     cols = list(POLLUTANTS) + list(WEATHER)
     d = daily[cols + ["location_name", "continent", "country", "aq_us_epa_index", "date"]].dropna()
     between = d[cols].corr(method="spearman").loc[list(POLLUTANTS), list(WEATHER)]
@@ -288,17 +280,17 @@ def air_quality_analysis(daily: pd.DataFrame, params: dict) -> dict:
     ax.set_title("15 capitals with the highest median PM2.5")
     save(fig, OUT / "airquality_top_pm25.png")
 
-    within.round(3).to_csv(TABLES / "airquality_within_city_corr.csv")
-    between.round(3).to_csv(TABLES / "airquality_pooled_corr.csv")
+    within.round(3).to_csv(P.tables / "airquality_within_city_corr.csv")
+    between.round(3).to_csv(P.tables / "airquality_pooled_corr.csv")
 
     # which weather variables drive PM2.5? (LightGBM + permutation importance, time split)
     import lightgbm as lgb
 
     feats = list(WEATHER) + ["latitude", "longitude", "month"]
     dd = daily.dropna(subset=["aq_pm25"]).assign(month=lambda x: x["date"].dt.month)
-    cut = dd["date"].max() - pd.Timedelta(days=params["split"]["test_days"])
+    cut = dd["date"].max() - pd.Timedelta(days=S.split.test_days)
     trn, tst = dd[dd["date"] <= cut], dd[dd["date"] > cut]
-    m = lgb.LGBMRegressor(n_estimators=600, learning_rate=0.05, num_leaves=63, verbose=-1, random_state=params["seed"])
+    m = lgb.LGBMRegressor(n_estimators=600, learning_rate=0.05, num_leaves=63, verbose=-1, random_state=S.seed)
     m.fit(trn[feats], np.log1p(trn["aq_pm25"]))
     r2 = float(1 - np.mean((np.log1p(tst["aq_pm25"]) - m.predict(tst[feats])) ** 2) / np.var(np.log1p(tst["aq_pm25"])))
     pi = permutation_importance(
@@ -334,26 +326,26 @@ def air_quality_analysis(daily: pd.DataFrame, params: dict) -> dict:
 
 
 # ------------------------------------------------------------------------------------ feature importance
-def feature_importance(params: dict) -> dict:
+def feature_importance() -> dict:
     import shap
 
-    ap = params["analyses"]
-    feat = pd.read_parquet(FEATURES_PATH)
-    cols = json.loads((MODELS / "feature_columns.json").read_text())
-    model = joblib.load(MODELS / "lightgbm.joblib")
+    ap = S.analyses
+    feat = pd.read_parquet(P.features_path)
+    cols = json.loads((P.models / "feature_columns.json").read_text())
+    model = joblib.load(P.models / "lightgbm.joblib")
     te = feat[feat["split"] == "test"]
     X = te[cols].astype("float64")
     y = te["target"]
 
     gain = pd.Series(model.booster_.feature_importance("gain"), index=cols)
     gain = gain / gain.sum()
-    Xs = X.sample(min(ap["permutation_sample"], len(X)), random_state=0)
+    Xs = X.sample(min(ap.permutation_sample, len(X)), random_state=0)
     ys = y.loc[Xs.index]
     perm = permutation_importance(
         model, Xs, ys, scoring="neg_root_mean_squared_error", n_repeats=5, random_state=0, n_jobs=-1
     )
     perm = pd.Series(perm.importances_mean, index=cols)
-    Xshap = X.sample(min(ap["shap_sample"], len(X)), random_state=1)
+    Xshap = X.sample(min(ap.shap_sample, len(X)), random_state=1)
     sv = shap.TreeExplainer(model).shap_values(Xshap)
     shap_imp = pd.Series(np.abs(sv).mean(axis=0), index=cols)
     tr = feat[feat["split"] == "train"].sample(30000, random_state=2)
@@ -365,9 +357,9 @@ def feature_importance(params: dict) -> dict:
     ranks = table.rank(ascending=False)
     table["Mean rank"] = ranks.mean(axis=1)
     table = table.sort_values("Mean rank")
-    table.to_csv(TABLES / "feature_importance.csv")
+    table.to_csv(P.tables / "feature_importance.csv")
     table.head(15).to_latex(
-        TABLES / "feature_importance.tex",
+        P.tables / "feature_importance.tex",
         float_format="%.3f",
         caption="Top-15 features for next-day temperature under four importance techniques " "(sorted by mean rank).",
         label="tab:feature_importance",
@@ -460,13 +452,13 @@ def spatial_analysis(daily: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         )
         .reset_index()
     )
-    loc.to_csv(TABLES / "location_summary.csv", index=False)
+    loc.to_csv(P.tables / "location_summary.csv", index=False)
 
     moran = {
         v: morans_i(loc[v].to_numpy(), loc["latitude"].to_numpy(), loc["longitude"].to_numpy())
         for v in ["temperature", "precip", "humidity", "pm25"]
     }
-    pd.DataFrame(moran, index=["Moran's I", "p-value"]).T.to_csv(TABLES / "morans_i.csv")
+    pd.DataFrame(moran, index=["Moran's I", "p-value"]).T.to_csv(P.tables / "morans_i.csv")
 
     # static map-like scatter (lon/lat) for the report
     fig, axes = plt.subplots(2, 2, figsize=(12, 6.4))
@@ -536,7 +528,7 @@ def spatial_analysis(daily: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             title=title,
         )
         figp.update_traces(marker={"size": 9, "line": {"width": 0.5, "color": "#52514e"}})
-        figp.write_html(MAPS / f"map_{v}.html", include_plotlyjs="cdn")
+        figp.write_html(P.maps / f"map_{v}.html", include_plotlyjs="cdn")
         try:
             figp.write_image(OUT / f"geo_map_{v}.png", width=1100, height=560, scale=1.5)
         except Exception as exc:  # noqa: BLE001 - static export needs Chrome via kaleido; HTML still produced
@@ -561,7 +553,7 @@ def spatial_analysis(daily: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
                 max_width=250,
             ),
         ).add_to(fmap)
-    fmap.save(str(MAPS / "capitals_weather_map.html"))
+    fmap.save(str(P.maps / "capitals_weather_map.html"))
     return {f"moran_{k}": v[0] for k, v in moran.items()} | {f"moran_{k}_p": v[1] for k, v in moran.items()}, loc
 
 
@@ -623,7 +615,7 @@ def geographic_patterns(daily: pd.DataFrame, loc: pd.DataFrame) -> dict:
         )
         .reindex(CONTINENT_ORDER)
     )
-    cont.round(2).to_csv(TABLES / "continent_summary.csv")
+    cont.round(2).to_csv(P.tables / "continent_summary.csv")
     cont.rename(
         columns={
             "cities": "Cities",
@@ -636,7 +628,7 @@ def geographic_patterns(daily: pd.DataFrame, loc: pd.DataFrame) -> dict:
             "uv": "UV",
         }
     ).to_latex(
-        TABLES / "continent_summary.tex",
+        P.tables / "continent_summary.tex",
         float_format="%.2f",
         escape=False,
         caption="Weather and air-quality profile per continent.",
@@ -652,7 +644,7 @@ def geographic_patterns(daily: pd.DataFrame, loc: pd.DataFrame) -> dict:
         )
         .round(2)
     )
-    country.to_csv(TABLES / "country_summary.csv")
+    country.to_csv(P.tables / "country_summary.csv")
     return {
         "geo_hottest": f"{hot.iloc[0]['location_name']} ({hot.iloc[0]['temperature']:.1f} °C)",
         "geo_coldest": f"{cold.iloc[0]['location_name']} ({cold.iloc[0]['temperature']:.1f} °C)",
@@ -665,16 +657,15 @@ def main() -> None:
     ensure_dirs()
     apply_style()
     OUT.mkdir(parents=True, exist_ok=True)
-    params = load_params()
-    daily = pd.read_parquet(DAILY_PATH)
+    daily = pd.read_parquet(P.daily_path)
     results = {}
     results |= climate_analysis(daily)
-    results |= air_quality_analysis(daily, params)
-    results |= feature_importance(params)
+    results |= air_quality_analysis(daily)
+    results |= feature_importance()
     spatial, loc = spatial_analysis(daily)
     results |= spatial
     results |= geographic_patterns(daily, loc)
-    (METRICS / "analyses.json").write_text(json.dumps(results, indent=2))
+    (P.metrics / "analyses.json").write_text(json.dumps(results, indent=2))
 
     mlflow = setup_mlflow()
     with mlflow.start_run(run_name="analyses"):
@@ -682,7 +673,7 @@ def main() -> None:
         mlflow.log_metrics({k: v for k, v in results.items() if isinstance(v, float)})
         mlflow.set_tags({k: v for k, v in results.items() if isinstance(v, str)})
         mlflow.log_artifacts(str(OUT), artifact_path="figures")
-        mlflow.log_artifacts(str(MAPS), artifact_path="maps")
+        mlflow.log_artifacts(str(P.maps), artifact_path="maps")
     print(json.dumps(results, indent=2))
 
 

@@ -10,7 +10,10 @@ import json
 import shutil
 from pathlib import Path
 
-from weather.config import ROOT, ensure_dirs, load_params
+from weather.utils.config import ensure_dirs, get_settings
+
+S = get_settings()
+P = S.paths
 
 
 def _rest_download(dataset: str, filename: str, dest: Path) -> None:
@@ -27,20 +30,20 @@ def _rest_download(dataset: str, filename: str, dest: Path) -> None:
 
 def main() -> None:
     ensure_dirs()
-    p = load_params()["data"]
-    dest = ROOT / p["raw_path"]
+    p = S.data
+    dest = S.raw_csv
     try:
         import kagglehub
 
-        src = Path(kagglehub.dataset_download(p["kaggle_dataset"], path=p["kaggle_file"]))
+        src = Path(kagglehub.dataset_download(p.kaggle_dataset, path=p.kaggle_file))
         if src.is_dir():
-            src = src / p["kaggle_file"]
+            src = src / p.kaggle_file
         if not src.exists() or src.stat().st_size < 1_000_000:
             raise RuntimeError(f"kagglehub returned an unusable file: {src}")
         shutil.copy(src, dest)
     except Exception as exc:  # noqa: BLE001
         print(f"kagglehub download failed ({exc}); falling back to Kaggle REST API")
-        _rest_download(p["kaggle_dataset"], p["kaggle_file"], dest)
+        _rest_download(p.kaggle_dataset, p.kaggle_file, dest)
     print(f"saved {dest} ({dest.stat().st_size / 1e6:.1f} MB)")
 
 

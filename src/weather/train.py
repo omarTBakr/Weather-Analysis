@@ -1,5 +1,6 @@
 """Stage `train`: next-day temperature models on the city panel, each tracked as a nested MLflow run.
 
+
 Models: persistence baseline, Ridge (on train-fitted standardisation), Random Forest, XGBoost, LightGBM.
 Validation window = early stopping / ensemble weights; test window = untouched final evaluation.
 """
@@ -19,9 +20,12 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
 
-from weather.config import FEATURES_PATH, METRICS, MODELS, PREDICTIONS_PATH, ensure_dirs, load_params, setup_mlflow
 from weather.metrics import regression_metrics
 from weather.mlflow_utils import log_figure, log_metrics_prefixed, residual_figure
+from weather.utils.config import ModelSettings, ensure_dirs, get_settings, setup_mlflow
+
+S = get_settings()
+P = S.paths
 
 KEYS = ["location_name", "country", "continent", "date", "target_date", "split", "target"]
 
@@ -36,16 +40,16 @@ class Persistence:
         return np.asarray(X)[:, self.i]
 
 
-def build_models(mp: dict, seed: int, scaler) -> dict:
+def build_models(mp: ModelSettings, seed: int, scaler) -> dict:
     return {
-        "ridge": Pipeline([("scaler", scaler), ("ridge", Ridge(alpha=mp["ridge"]["alpha"]))]),
-        "random_forest": RandomForestRegressor(random_state=seed, n_jobs=-1, **mp["random_forest"]),
-        "xgboost": xgb.XGBRegressor(random_state=seed, n_jobs=-1, tree_method="hist", **mp["xgboost"]),
+        "ridge": Pipeline([("scaler", scaler), ("ridge", Ridge(alpha=mp.ridge.alpha))]),
+        "random_forest": RandomForestRegressor(random_state=seed, n_jobs=-1, **mp.random_forest.model_dump()),
+        "xgboost": xgb.XGBRegressor(random_state=seed, n_jobs=-1, tree_method="hist", **mp.xgboost.model_dump()),
         "lightgbm": lgb.LGBMRegressor(
             random_state=seed,
             n_jobs=-1,
             verbose=-1,
-            **{k: v for k, v in mp["lightgbm"].items() if k != "early_stopping_rounds"},
+            **{k: v for k, v in mp.lightgbm.model_dump().items() if k != "early_stopping_rounds"},
         ),
     }
 
@@ -60,7 +64,7 @@ def fit(name, model, Xtr, ytr, Xva, yva, mp):
             ytr,
             eval_X=(Xva,),
             eval_y=(yva,),
-            callbacks=[lgb.early_stopping(mp["lightgbm"]["early_stopping_rounds"], verbose=False)],
+            callbacks=[lgb.early_stopping(mp.lightgbm.early_stopping_rounds, verbose=False)],
         )
         return {"best_iteration": int(model.best_iteration_)}
     if name == "ridge":
@@ -77,7 +81,7 @@ def log_model(mlflow, name, model, Xs, register: bool):
         name="model",
         signature=sig,
         input_example=Xs.iloc[:5],
-        registered_model_name=f"weather-temp-{name}" if register else None,
+        registered_model_name=f"{S.mlflow.registered_model_prefix}-{name}" if register else None,
     )
     if name == "xgboost":
         mlflow.xgboost.log_model(model, **kw)
@@ -92,12 +96,11 @@ def log_model(mlflow, name, model, Xs, register: bool):
 
 def main() -> None:
     ensure_dirs()
-    params = load_params()
-    mp = params["models"]
-    seed = params["seed"]
-    feat = pd.read_parquet(FEATURES_PATH)
-    cols = json.loads((MODELS / "feature_columns.json").read_text())
-    scaler = joblib.load(MODELS / "scaler.joblib")
+    mp = S.models
+    seed = S.seed
+    feat = pd.read_parquet(P.features_path)
+    cols = json.loads((P.models / "feature_columns.json").read_text())
+    scaler = joblib.load(P.models / "scaler.joblib")
     tr, va, te = (feat[feat["split"] == s] for s in ("train", "val", "test"))
     # all-float inputs keep the MLflow signature robust to missing values at serving time
     Xtr, Xva, Xte = (d[cols].astype("float64") for d in (tr, va, te))
@@ -114,7 +117,7 @@ def main() -> None:
                 "train_rows": len(tr),
                 "val_rows": len(va),
                 "test_rows": len(te),
-                "horizon_days": params["features"]["horizon"],
+                "horizon_days": S.features.horizon,
             }
         )
 
@@ -122,8 +125,8 @@ def main() -> None:
         for name, model in models.items():
             with mlflow.start_run(run_name=name, nested=True):
                 mlflow.set_tags({"stage": "train", "model": name, "framing": "panel"})
-                if name in mp:
-                    mlflow.log_params(mp[name])
+                if name in ModelSettings.model_fields:
+                    mlflow.log_params(getattr(mp, name).model_dump())
                 t0 = time.time()
                 extra = {} if name == "persistence" else fit(name, model, Xtr, ytr, Xva, yva, mp)
                 fit_s = time.time() - t0
@@ -135,7 +138,7 @@ def main() -> None:
                 log_figure(mlflow, residual_figure(yte, pte, f"{name} — test window"), f"residuals_{name}.png")
                 if name != "persistence":
                     log_model(mlflow, name, model, Xva.sample(2000, random_state=seed), register=True)
-                    joblib.dump(model, MODELS / f"{name}.joblib")
+                    joblib.dump(model, P.models / f"{name}.joblib")
                 preds.loc[va.index, f"pred_{name}"] = pva
                 preds.loc[te.index, f"pred_{name}"] = pte
                 results[name] = {"val": mva, "test": mte, "fit_seconds": fit_s, **extra}
@@ -144,8 +147,8 @@ def main() -> None:
                 )
         mlflow.set_tag("parent_run_id", parent.info.run_id)
 
-    preds.to_parquet(PREDICTIONS_PATH, index=False)
-    (METRICS / "train_panel.json").write_text(json.dumps(results, indent=2))
+    preds.to_parquet(P.predictions_path, index=False)
+    (P.metrics / "train_panel.json").write_text(json.dumps(results, indent=2))
 
 
 if __name__ == "__main__":

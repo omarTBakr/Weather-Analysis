@@ -1,14 +1,11 @@
 import numpy as np
 
 from weather.features import add_features, time_split
+from weather.utils.config import FeatureSettings
 
-FP = {
-    "target": "temperature_celsius",
-    "horizon": 1,
-    "lags": [1, 7],
-    "rolling_windows": [3, 7],
-    "exog": ["humidity", "pressure_mb"],
-}
+FP = FeatureSettings(
+    target="temperature_celsius", horizon=1, lags=[1, 7], rolling_windows=[3, 7], exog=["humidity", "pressure_mb"]
+)
 
 
 def test_target_is_next_day_temperature(daily_panel):

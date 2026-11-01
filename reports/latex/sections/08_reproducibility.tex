@@ -2,8 +2,12 @@
 \begin{itemize}
   \item \textbf{Environment}: \texttt{uv} (\texttt{pyproject.toml} and \texttt{uv.lock}), Python 3.12;
         formatting and linting with \texttt{black} and \texttt{ruff}, enforced by a pre-commit hook.
-  \item \textbf{Pipeline}: \texttt{uv run dvc repro} rebuilds every artefact. Parameters are in
-        \texttt{params.yaml}. \texttt{dvc params diff} and \texttt{dvc metrics diff} compare experiments.
+  \item \textbf{Configuration}: every setting (paths, MLflow, data source, cleaning thresholds, features,
+        split, hyper-parameters) is in \nolinkurl{.env}. It is loaded into a typed pydantic settings model with
+        nested sections and validation, built once by a cached \texttt{get\_settings()}
+        (\nolinkurl{src/weather/utils/config.py}). Environment variables override the file.
+  \item \textbf{Pipeline}: \texttt{uv run dvc repro} rebuilds every artefact. Every stage depends on
+        \nolinkurl{.env}, and \texttt{dvc metrics diff} compares experiments.
   \item \textbf{Data versioning}: raw and processed data and model binaries are DVC-tracked and pushed to a
         DVC remote. Figures, tables and metrics are committed to git.
   \item \textbf{Experiment tracking}: \texttt{uv run mlflow ui --backend-store-uri sqlite:///mlflow.db}

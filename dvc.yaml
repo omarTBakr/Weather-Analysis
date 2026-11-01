@@ -1,4 +1,5 @@
 # Reproducible pipeline:  uv run dvc repro      (DAG: uv run dvc dag)
+# All configuration lives in .env (loaded by src/weather/utils/config.py); every stage depends on it.
 # Every stage also logs a run to MLflow (sqlite:///mlflow.db, experiment "weather-forecasting").
 # Figures / tables / metrics use `cache: false` so they are committed to git and render on GitHub;
 # data and model binaries are cached by DVC and pushed to the DVC remote.
@@ -6,20 +7,19 @@ stages:
   download:
     cmd: python -m weather.download
     deps:
+      - .env
+      - src/weather/utils/config.py
       - src/weather/download.py
-    params:
-      - data
     outs:
       - data/raw/GlobalWeatherRepository.csv
 
   clean:
     cmd: python -m weather.clean
     deps:
+      - .env
+      - src/weather/utils/config.py
       - data/raw/GlobalWeatherRepository.csv
       - src/weather/clean.py
-      - src/weather/config.py
-    params:
-      - clean
     outs:
       - data/interim/clean.parquet
       - reports/metrics/daily_batch_deviation.csv:
@@ -31,13 +31,10 @@ stages:
   features:
     cmd: python -m weather.features
     deps:
+      - .env
+      - src/weather/utils/config.py
       - data/interim/clean.parquet
       - src/weather/features.py
-    params:
-      - features
-      - split
-      - global_series.min_coverage
-      - clean.interpolate_limit
     outs:
       - data/processed/daily.parquet
       - data/processed/features.parquet
@@ -51,6 +48,8 @@ stages:
   eda:
     cmd: python -m weather.eda
     deps:
+      - .env
+      - src/weather/utils/config.py
       - data/interim/clean.parquet
       - data/processed/daily.parquet
       - data/processed/global_series.parquet
@@ -71,15 +70,13 @@ stages:
   anomaly:
     cmd: python -m weather.anomaly
     deps:
+      - .env
+      - src/weather/utils/config.py
       - data/interim/clean.parquet
       - data/processed/global_series.parquet
       - reports/metrics/daily_batch_deviation.csv
       - src/weather/anomaly.py
       - src/weather/eda.py
-    params:
-      - anomaly
-      - seed
-      - clean.corrupt_day_threshold_c
     outs:
       - reports/figures/anomaly:
           cache: false
@@ -96,16 +93,14 @@ stages:
   train:
     cmd: python -m weather.train
     deps:
+      - .env
+      - src/weather/utils/config.py
       - data/processed/features.parquet
       - models/scaler.joblib
       - models/feature_columns.json
       - src/weather/train.py
       - src/weather/metrics.py
       - src/weather/mlflow_utils.py
-    params:
-      - models
-      - seed
-      - features.horizon
     outs:
       - data/processed/predictions.parquet
       - models/ridge.joblib
@@ -119,12 +114,11 @@ stages:
   train_global:
     cmd: python -m weather.train_global
     deps:
+      - .env
+      - src/weather/utils/config.py
       - data/processed/global_series.parquet
       - src/weather/train_global.py
       - src/weather/metrics.py
-    params:
-      - global_series
-      - split.test_days
     outs:
       - reports/figures/forecast_global:
           cache: false
@@ -141,6 +135,8 @@ stages:
   ensemble:
     cmd: python -m weather.ensemble
     deps:
+      - .env
+      - src/weather/utils/config.py
       - data/processed/predictions.parquet
       - data/processed/features.parquet
       - models/ridge.joblib
@@ -166,15 +162,13 @@ stages:
   analyses:
     cmd: python -m weather.analyses
     deps:
+      - .env
+      - src/weather/utils/config.py
       - data/processed/daily.parquet
       - data/processed/features.parquet
       - models/lightgbm.joblib
       - models/feature_columns.json
       - src/weather/analyses.py
-    params:
-      - analyses
-      - seed
-      - split.test_days
     outs:
       - reports/figures/analyses:
           cache: false

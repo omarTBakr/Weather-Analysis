@@ -160,12 +160,12 @@ Interactive maps (open locally): [`reports/maps/capitals_weather_map.html`](repo
 
 ## Repository structure
 ```
-├── params.yaml              # every tunable: thresholds, split, lags, model hyper-parameters
+├── .env                     # ALL configuration: paths, MLflow, data source, thresholds, split, lags, hyper-parameters
 ├── dvc.yaml / dvc.lock      # pipeline DAG + exact hashes of every input/output
 ├── pyproject.toml / uv.lock # environment (uv) + ruff/black/pytest config
 ├── .pre-commit-config.yaml  # ruff (lint+fix) + black (format) before every commit
 ├── src/weather/
-│   ├── config.py            # paths, params, MLflow setup (sqlite tracking + model registry)
+│   ├── utils/config.py      # pydantic Settings (nested BaseModels) built from .env; cached get_settings(), MLflow setup
 │   ├── download.py          # Kaggle download (kagglehub, REST fallback)
 │   ├── clean.py             # validity, dedup, corrupted batches, outliers, imputation, continents
 │   ├── features.py          # daily panel, lags/rolling/calendar/diurnal features, split, scaler
@@ -207,7 +207,15 @@ uv run pytest                    # tests
 cd reports/latex && latexmk -pdf main.tex   # build the report
 ```
 
-To pull the exact data and models instead of recomputing them, run `uv run dvc pull`. The default remote is a local folder (`../dvc-storage-weather`); point it at S3, GDrive or another store with `dvc remote modify localstore url <url>`. To experiment, change `params.yaml`, then use `dvc repro` and `dvc params diff` / `dvc metrics diff`. Only the affected stages rerun.
+To pull the exact data and models instead of recomputing them, run `uv run dvc pull`. The default remote is a local folder (`../dvc-storage-weather`); point it at S3, GDrive or another store with `dvc remote modify localstore url <url>`. To experiment, change a value in `.env` (or override it with an environment variable such as `CLEAN__IQR_K=2.5`), then run `dvc repro` and compare runs with `dvc metrics diff` or in MLflow.
+
+### Configuration
+All settings live in [`.env`](.env) and are loaded by [`src/weather/utils/config.py`](src/weather/utils/config.py).
+- `Settings` is a pydantic-settings model (a pydantic `BaseModel` that reads `.env`). Each section is its own nested `BaseModel`, filled from `SECTION__KEY` variables, and values are type-checked (for example `SPLIT__TEST_DAYS=0` is rejected).
+- `get_settings()` builds the object once and caches it with `functools.lru_cache`.
+- Example: `get_settings().models.lightgbm.num_leaves`, or `get_settings().paths.features_path`.
+- Real environment variables override `.env`. `.env` is committed because it holds no secrets (the Kaggle token stays in `~/.kaggle`) and reproducing the pipeline depends on it.
+- Every DVC stage depends on `.env`, so changing any setting reruns the pipeline.
 
 ### MLflow layout
 - Experiment `weather-forecasting`: one run per stage (`clean`, `features`, `eda`, `anomaly`, `train_panel`, `train_global`, `ensemble`, `analyses`).

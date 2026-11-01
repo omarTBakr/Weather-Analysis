@@ -49,15 +49,13 @@ def test_invalid_values_become_nan():
     assert report["invalid_set_to_nan"]["pressure_mb"] == 1
 
 
-def test_corrupted_batch_day_is_nulled(daily_panel, tmp_path, monkeypatch):
-    import weather.clean as clean_mod
-
-    monkeypatch.setattr(clean_mod, "METRICS", tmp_path)
+def test_corrupted_batch_day_is_nulled(daily_panel, tmp_path):
     df = daily_panel.copy()
     bad_day = df["date"].iloc[60]
     df.loc[df["date"] == bad_day, "temperature_celsius"] -= 20  # every city shifts at once
     report = {}
-    out = null_corrupted_days(df, threshold=4.0, report=report)
+    out = null_corrupted_days(df, threshold=4.0, report=report, deviation_csv=tmp_path / "dev.csv")
     assert list(report["corrupted_days"]) == [str(bad_day.date())]
     assert out.loc[out["date"] == bad_day, "temperature_celsius"].isna().all()
     assert out.loc[out["date"] != bad_day, "temperature_celsius"].notna().all()
+    assert (tmp_path / "dev.csv").exists()

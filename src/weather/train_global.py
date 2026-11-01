@@ -16,13 +16,16 @@ import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-from weather.config import FIGURES, GLOBAL_SERIES_PATH, METRICS, TABLES, ensure_dirs, load_params, setup_mlflow
 from weather.metrics import regression_metrics
 from weather.plotting import INK_2, MUTED, SERIES, apply_style, save
+from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
+
+S = get_settings()
+P = S.paths
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", module="statsmodels")
-OUT = FIGURES / "forecast_global"
+OUT = P.figures / "forecast_global"
 
 
 def design(index: pd.DatetimeIndex, t0: pd.Timestamp, order: int, hour: pd.DataFrame | None) -> pd.DataFrame:
@@ -84,26 +87,25 @@ class GlobalModels:
         raise ValueError(name)
 
 
-MODELS = ["naive", "seasonal_naive", "holt_winters", "harmonic_regression", "sarimax_fourier"]
+GLOBAL_MODELS = ["naive", "seasonal_naive", "holt_winters", "harmonic_regression", "sarimax_fourier"]
 
 
 def main() -> None:
     ensure_dirs()
     apply_style()
     OUT.mkdir(parents=True, exist_ok=True)
-    params = load_params()
-    gp = params["global_series"]
-    test_days = params["split"]["test_days"]
-    gs = pd.read_parquet(GLOBAL_SERIES_PATH).set_index("date").asfreq("D").interpolate()
+    gp = S.global_series
+    test_days = S.split.test_days
+    gs = pd.read_parquet(P.global_series_path).set_index("date").asfreq("D").interpolate()
     hist, test = gs.iloc[:-test_days], gs.iloc[-test_days:]
-    gm = GlobalModels(gp["fourier_order"])
+    gm = GlobalModels(gp.fourier_order)
 
     preds, results, intervals = {}, {}, {}
     mlflow = setup_mlflow()
     with mlflow.start_run(run_name="train_global"):
         mlflow.set_tags({"stage": "train_global", "framing": "global_series"})
-        mlflow.log_params({**gp, "test_days": test_days, "history_days": len(hist)})
-        for name in MODELS:
+        mlflow.log_params({**gp.model_dump(), "test_days": test_days, "history_days": len(hist)})
+        for name in GLOBAL_MODELS:
             with mlflow.start_run(run_name=f"global_{name}", nested=True):
                 mlflow.set_tags({"model": name, "framing": "global_series"})
                 p, ci = gm.forecast(name, hist, test.index)
@@ -131,10 +133,10 @@ def main() -> None:
 
         # future projection: refit on all data with the best interval-producing model
         best = min(intervals, key=lambda k: results[k]["rmse"])
-        fidx = pd.date_range(gs.index[-1] + pd.Timedelta(days=1), periods=gp["future_days"], freq="D")
+        fidx = pd.date_range(gs.index[-1] + pd.Timedelta(days=1), periods=gp.future_days, freq="D")
         fut, fci = gm.forecast(best, gs, fidx)
         future = pd.DataFrame({"date": fidx, "forecast": fut, "lower95": fci[:, 0], "upper95": fci[:, 1]})
-        future.to_csv(TABLES / "global_future_forecast.csv", index=False)
+        future.to_csv(P.tables / "global_future_forecast.csv", index=False)
         mlflow.set_tag("future_model", best)
 
         # figures --------------------------------------------------------------------------------
@@ -177,22 +179,22 @@ def main() -> None:
         ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3)
         ax.set_ylabel("°C")
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
-        ax.set_title(f"Projected global mean temperature, next {gp['future_days']} days")
+        ax.set_title(f"Projected global mean temperature, next {gp.future_days} days")
         save(fig, OUT / "global_future_forecast.png")
         mlflow.log_artifacts(str(OUT), artifact_path="figures")
-        mlflow.log_artifact(str(TABLES / "global_future_forecast.csv"))
+        mlflow.log_artifact(str(P.tables / "global_future_forecast.csv"))
 
     tbl = pd.DataFrame(results).T[["mae", "rmse", "smape", "r2"]]
     tbl.index = [i.replace("_", " ").title() for i in tbl.index]
-    tbl.to_csv(TABLES / "global_model_comparison.csv")
+    tbl.to_csv(P.tables / "global_model_comparison.csv")
     tbl.to_latex(
-        TABLES / "global_model_comparison.tex",
+        P.tables / "global_model_comparison.tex",
         float_format="%.3f",
         caption=f"Global mean temperature: {test_days}-day multi-step forecast accuracy on the test window.",
         label="tab:global_models",
         escape=True,
     )
-    (METRICS / "train_global.json").write_text(json.dumps({"results": results, "future_model": best}, indent=2))
+    (P.metrics / "train_global.json").write_text(json.dumps({"results": results, "future_model": best}, indent=2))
 
 
 if __name__ == "__main__":

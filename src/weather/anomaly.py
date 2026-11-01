@@ -12,20 +12,14 @@ from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 
-from weather.config import (
-    CLEAN_PATH,
-    FIGURES,
-    GLOBAL_SERIES_PATH,
-    METRICS,
-    TABLES,
-    ensure_dirs,
-    load_params,
-    setup_mlflow,
-)
 from weather.eda import harmonic_decomposition
 from weather.plotting import CONTINENT_ORDER, CRITICAL, INK_2, MUTED, SERIES, apply_style, save
+from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
 
-OUT = FIGURES / "anomaly"
+S = get_settings()
+P = S.paths
+
+OUT = P.figures / "anomaly"
 VARS = [
     "temperature_celsius",
     "humidity",
@@ -83,22 +77,21 @@ def main() -> None:
     ensure_dirs()
     apply_style()
     OUT.mkdir(parents=True, exist_ok=True)
-    params = load_params()
-    ap = params["anomaly"]
-    seed = params["seed"]
-    df = pd.read_parquet(CLEAN_PATH)
+    ap = S.anomaly
+    seed = S.seed
+    df = pd.read_parquet(P.clean_path)
     z = local_standardise(df)
 
-    iso = IsolationForest(n_estimators=300, contamination=ap["contamination"], random_state=seed, n_jobs=-1)
+    iso = IsolationForest(n_estimators=300, contamination=ap.contamination, random_state=seed, n_jobs=-1)
     df["iso_flag"] = iso.fit_predict(z) == -1
     df["iso_score"] = -iso.score_samples(z)
 
     rng = np.random.default_rng(seed)
-    sample_idx = rng.choice(len(df), size=min(ap["sample_size"], len(df)), replace=False)
-    lof = LocalOutlierFactor(n_neighbors=ap["lof_neighbors"], contamination=ap["contamination"], n_jobs=-1)
+    sample_idx = rng.choice(len(df), size=min(ap.sample_size, len(df)), replace=False)
+    lof = LocalOutlierFactor(n_neighbors=ap.lof_neighbors, contamination=ap.contamination, n_jobs=-1)
     df["lof_flag"] = pd.NA
     df.loc[df.index[sample_idx], "lof_flag"] = lof.fit_predict(z.iloc[sample_idx]) == -1
-    flag_t, rz = temporal_anomalies(df, ap["z_thresh"])
+    flag_t, rz = temporal_anomalies(df, ap.z_thresh)
     df["temporal_flag"] = flag_t
     df["temporal_rz"] = rz
 
@@ -108,10 +101,10 @@ def main() -> None:
     jacc = float((iso_s & lof_s).sum() / max((iso_s | lof_s).sum(), 1))
 
     # global-scale anomalies: residual of the global harmonic model
-    gs = pd.read_parquet(GLOBAL_SERIES_PATH)
+    gs = pd.read_parquet(P.global_series_path)
     dec = harmonic_decomposition(gs)
     gz = (dec["resid"] - dec["resid"].mean()) / dec["resid"].std()
-    g_thr = ap["global_z_thresh"]
+    g_thr = ap.global_z_thresh
     global_anoms = dec[gz.abs() > g_thr].assign(z=gz[gz.abs() > g_thr])
 
     # --- figures -----------------------------------------------------------------------------------
@@ -153,11 +146,11 @@ def main() -> None:
 
     # PCA projection
     pca = PCA(n_components=2, random_state=seed).fit(z.iloc[sample_idx])
-    P = pca.transform(z.iloc[sample_idx])
+    proj = pca.transform(z.iloc[sample_idx])
     f = iso_s.to_numpy()
     fig, ax = plt.subplots(figsize=(6.5, 5))
-    ax.scatter(P[~f, 0], P[~f, 1], s=3, color=MUTED, alpha=0.25, linewidths=0, label="normal")
-    ax.scatter(P[f, 0], P[f, 1], s=10, color=CRITICAL, alpha=0.8, linewidths=0, label="Isolation-Forest anomaly")
+    ax.scatter(proj[~f, 0], proj[~f, 1], s=3, color=MUTED, alpha=0.25, linewidths=0, label="normal")
+    ax.scatter(proj[f, 0], proj[f, 1], s=10, color=CRITICAL, alpha=0.8, linewidths=0, label="Isolation-Forest anomaly")
     ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.0%} var.)")
     ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.0%} var.)")
     ax.legend(loc="upper right", markerscale=2)
@@ -193,8 +186,10 @@ def main() -> None:
     save(fig, OUT / "global_anomalies.png")
 
     # batch-level corruption detector (computed in the clean stage)
-    bd = pd.read_csv(METRICS / "daily_batch_deviation.csv", parse_dates=["date"]).set_index("date")["median_abs_dev_c"]
-    thr = params["clean"]["corrupt_day_threshold_c"]
+    bd = pd.read_csv(P.metrics / "daily_batch_deviation.csv", parse_dates=["date"]).set_index("date")[
+        "median_abs_dev_c"
+    ]
+    thr = S.clean.corrupt_day_threshold_c
     fig, ax = plt.subplots(figsize=(9, 3))
     ax.plot(bd.index, bd, color=SERIES[0], linewidth=1)
     ax.axhline(thr, color=CRITICAL, linewidth=1, linestyle="--")
@@ -274,7 +269,7 @@ def main() -> None:
         ]
         .head(50)
     )
-    top.to_csv(TABLES / "top_anomalies.csv", index=False)
+    top.to_csv(P.tables / "top_anomalies.csv", index=False)
     t10 = top.head(10)[["date", "location_name", "country", "temperature_celsius", "wind_kph", "precip_mm", "aq_pm25"]]
     t10 = t10.assign(date=t10["date"].dt.strftime("%Y-%m-%d")).rename(
         columns={
@@ -288,14 +283,14 @@ def main() -> None:
         }
     )
     t10.to_latex(
-        TABLES / "top_anomalies.tex",
+        P.tables / "top_anomalies.tex",
         index=False,
         float_format="%.1f",
         caption="Ten strongest Isolation-Forest anomalies.",
         label="tab:anomalies",
         escape=True,
     )
-    global_anoms[["observed", "fitted", "z"]].round(2).to_csv(TABLES / "global_anomalies.csv")
+    global_anoms[["observed", "fitted", "z"]].round(2).to_csv(P.tables / "global_anomalies.csv")
 
     metrics = {
         "iso_flagged": int(df["iso_flag"].sum()),
@@ -313,14 +308,14 @@ def main() -> None:
         "global_anomaly_days": int(len(global_anoms)),
         "most_flagged_location": top_city,
     }
-    (METRICS / "anomaly.json").write_text(json.dumps(metrics, indent=2))
+    (P.metrics / "anomaly.json").write_text(json.dumps(metrics, indent=2))
     mlflow = setup_mlflow()
     with mlflow.start_run(run_name="anomaly"):
         mlflow.set_tag("stage", "anomaly")
-        mlflow.log_params(ap)
+        mlflow.log_params(ap.model_dump())
         mlflow.log_metrics({k: v for k, v in metrics.items() if isinstance(v, (int, float))})
         mlflow.log_artifacts(str(OUT), artifact_path="figures")
-        mlflow.log_artifact(str(TABLES / "top_anomalies.csv"))
+        mlflow.log_artifact(str(P.tables / "top_anomalies.csv"))
     print(json.dumps(metrics, indent=2))
     print(global_anoms[["observed", "fitted", "z"]])
 
