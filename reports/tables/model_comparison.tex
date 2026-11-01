@@ -1,0 +1,18 @@
+\begin{table}
+\caption{Next-day temperature forecast accuracy on the 60-day test window (all cities). Skill = RMSE reduction relative to persistence.}
+\label{tab:model_comparison}
+\begin{tabular}{lrrrrrrr}
+\toprule
+ & MAE & RMSE & sMAPE (\%) & $R^2$ & $\le$2\,°C (\%) & Skill (\%) & Val RMSE \\
+\midrule
+Persistence (baseline) & 1.321 & 2.094 & 7.992 & 0.907 & 79.185 & 0.000 & 2.194 \\
+Ridge regression & 1.310 & 1.916 & 7.678 & 0.922 & 79.934 & 8.527 & 1.990 \\
+Random forest & 1.229 & 1.874 & 7.348 & 0.926 & 80.692 & 10.526 & 1.976 \\
+XGBoost & 1.225 & 1.850 & 7.334 & 0.928 & 81.076 & 11.664 & 1.950 \\
+LightGBM & 1.220 & 1.850 & 7.302 & 0.928 & 81.102 & 11.674 & 1.955 \\
+Ensemble: simple mean & 1.218 & 1.844 & 7.263 & 0.928 & 81.352 & 11.971 & 1.944 \\
+Ensemble: inverse-RMSE weighted & 1.218 & 1.844 & 7.263 & 0.928 & 81.325 & 11.976 & 1.944 \\
+Ensemble: stacking (NNLS) & 1.211 & 1.838 & 7.233 & 0.929 & 81.361 & 12.247 & 1.940 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,16 @@
+\begin{table}
+\caption{Global mean temperature: 60-day multi-step forecast accuracy on the test window.}
+\label{tab:global_models}
+\begin{tabular}{lrrrr}
+\toprule
+ & mae & rmse & smape & r2 \\
+\midrule
+Naive & 2.077 & 2.275 & 9.166 & -5.002 \\
+Seasonal Naive & 1.412 & 1.522 & 6.187 & -1.685 \\
+Holt Winters & 0.402 & 0.517 & 1.899 & 0.690 \\
+Harmonic Regression & 0.275 & 0.355 & 1.275 & 0.854 \\
+Sarimax Fourier & 0.292 & 0.368 & 1.344 & 0.843 \\
+Ensemble Mean & 0.286 & 0.346 & 1.330 & 0.861 \\
+\bottomrule
+\end{tabular}
+\end{table}

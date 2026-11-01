@@ -1,0 +1,13 @@
+\section{Reproducibility}
+\begin{itemize}
+  \item \textbf{Environment}: \texttt{uv} (\texttt{pyproject.toml} and \texttt{uv.lock}), Python 3.12;
+        formatting and linting with \texttt{black} and \texttt{ruff}, enforced by a pre-commit hook.
+  \item \textbf{Pipeline}: \texttt{uv run dvc repro} rebuilds every artefact. Parameters are in
+        \texttt{params.yaml}. \texttt{dvc params diff} and \texttt{dvc metrics diff} compare experiments.
+  \item \textbf{Data versioning}: raw and processed data and model binaries are DVC-tracked and pushed to a
+        DVC remote. Figures, tables and metrics are committed to git.
+  \item \textbf{Experiment tracking}: \texttt{uv run mlflow ui --backend-store-uri sqlite:///mlflow.db}
+        shows one run per stage, nested runs per model, artefacts, and registered models.
+  \item \textbf{Tests}: \texttt{uv run pytest}. The suite covers cleaning rules, corrupted-batch detection,
+        alignment of features and targets, strict time ordering of the split (no leakage), and the metrics.
+\end{itemize}

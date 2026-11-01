@@ -1,4 +1,5 @@
 """Stage `clean`: validity checks, de-duplication, outlier capping, imputation, continent mapping."""
+
 from __future__ import annotations
 
 import json
@@ -10,8 +11,13 @@ from weather.config import CLEAN_PATH, METRICS, ROOT, ensure_dirs, load_params, 
 
 # Imperial duplicates of metric columns carry no extra information.
 REDUNDANT = [
-    "temperature_fahrenheit", "wind_mph", "pressure_in", "precip_in",
-    "feels_like_fahrenheit", "visibility_miles", "gust_mph",
+    "temperature_fahrenheit",
+    "wind_mph",
+    "pressure_in",
+    "precip_in",
+    "feels_like_fahrenheit",
+    "visibility_miles",
+    "gust_mph",
 ]
 
 RENAME = {
@@ -55,18 +61,50 @@ NUMERIC_IMPUTE = list(VALID_RANGES)
 
 # Countries pycountry-convert cannot resolve (or resolves to a non-continent code).
 CONTINENT_OVERRIDES = {
-    "Timor-Leste": "Asia", "East Timor": "Asia", "Vatican City": "Europe", "Kosovo": "Europe",
-    "Bolivia": "South America", "Venezuela": "South America", "Iran": "Asia", "Syria": "Asia",
-    "Laos": "Asia", "Vietnam": "Asia", "Russia": "Europe", "South Korea": "Asia", "North Korea": "Asia",
-    "Tanzania": "Africa", "Moldova": "Europe", "Macedonia": "Europe", "North Macedonia": "Europe",
-    "Democratic Republic of Congo": "Africa", "Congo": "Africa", "Ivory Coast": "Africa",
-    "Cote d'Ivoire": "Africa", "Swaziland": "Africa", "Eswatini": "Africa", "Cape Verde": "Africa",
-    "Micronesia": "Oceania", "Palestine": "Asia", "Turkey": "Asia", "Türkiye": "Asia",
-    "Bahamas": "North America", "Gambia": "Africa", "Saint Vincent and the Grenadines": "North America",
-    "Saint Kitts and Nevis": "North America", "Saint Lucia": "North America", "Brunei Darussalam": "Asia",
-    "Brunei": "Asia", "Myanmar": "Asia", "Burma": "Asia", "Guinea-Bissau": "Africa",
-    "Marshall Islands": "Oceania", "Solomon Islands": "Oceania", "Western Sahara": "Africa",
-    "Fiji Islands": "Oceania", "Kyrghyzstan": "Asia", "Seychelles Islands": "Africa",
+    "Timor-Leste": "Asia",
+    "East Timor": "Asia",
+    "Vatican City": "Europe",
+    "Kosovo": "Europe",
+    "Bolivia": "South America",
+    "Venezuela": "South America",
+    "Iran": "Asia",
+    "Syria": "Asia",
+    "Laos": "Asia",
+    "Vietnam": "Asia",
+    "Russia": "Europe",
+    "South Korea": "Asia",
+    "North Korea": "Asia",
+    "Tanzania": "Africa",
+    "Moldova": "Europe",
+    "Macedonia": "Europe",
+    "North Macedonia": "Europe",
+    "Democratic Republic of Congo": "Africa",
+    "Congo": "Africa",
+    "Ivory Coast": "Africa",
+    "Cote d'Ivoire": "Africa",
+    "Swaziland": "Africa",
+    "Eswatini": "Africa",
+    "Cape Verde": "Africa",
+    "Micronesia": "Oceania",
+    "Palestine": "Asia",
+    "Turkey": "Asia",
+    "Türkiye": "Asia",
+    "Bahamas": "North America",
+    "Gambia": "Africa",
+    "Saint Vincent and the Grenadines": "North America",
+    "Saint Kitts and Nevis": "North America",
+    "Saint Lucia": "North America",
+    "Brunei Darussalam": "Asia",
+    "Brunei": "Asia",
+    "Myanmar": "Asia",
+    "Burma": "Asia",
+    "Guinea-Bissau": "Africa",
+    "Marshall Islands": "Oceania",
+    "Solomon Islands": "Oceania",
+    "Western Sahara": "Africa",
+    "Fiji Islands": "Oceania",
+    "Kyrghyzstan": "Asia",
+    "Seychelles Islands": "Africa",
     "Antarctica": "Antarctica",
 }
 
@@ -83,8 +121,15 @@ def country_to_continent(country: str) -> str:
         return CONTINENT_OVERRIDES[country]
     import pycountry_convert as pc
 
-    code_map = {"AF": "Africa", "AS": "Asia", "EU": "Europe", "NA": "North America",
-                "SA": "South America", "OC": "Oceania", "AN": "Antarctica"}
+    code_map = {
+        "AF": "Africa",
+        "AS": "Asia",
+        "EU": "Europe",
+        "NA": "North America",
+        "SA": "South America",
+        "OC": "Oceania",
+        "AN": "Antarctica",
+    }
     for name in (country, country.replace("&", "and")):
         try:
             a2 = pc.country_name_to_country_alpha2(name, cn_name_format="default")
@@ -111,8 +156,18 @@ def apply_valid_ranges(df: pd.DataFrame, report: dict) -> pd.DataFrame:
     return df
 
 
-WEATHER_COLS = ["temperature_celsius", "feels_like_celsius", "humidity", "pressure_mb", "wind_kph", "gust_kph",
-                "cloud", "uv_index", "precip_mm", "visibility_km"]
+WEATHER_COLS = [
+    "temperature_celsius",
+    "feels_like_celsius",
+    "humidity",
+    "pressure_mb",
+    "wind_kph",
+    "gust_kph",
+    "cloud",
+    "uv_index",
+    "precip_mm",
+    "visibility_km",
+]
 
 
 def null_corrupted_days(df: pd.DataFrame, threshold: float, report: dict) -> pd.DataFrame:
@@ -123,7 +178,8 @@ def null_corrupted_days(df: pd.DataFrame, threshold: float, report: dict) -> pd.
     """
     df = df.sort_values(["location_name", "date"])
     med = df.groupby("location_name")["temperature_celsius"].transform(
-        lambda s: s.rolling(15, center=True, min_periods=5).median())
+        lambda s: s.rolling(15, center=True, min_periods=5).median()
+    )
     day_dev = (df["temperature_celsius"] - med).abs().groupby(df["date"]).median()
     day_dev.rename("median_abs_dev_c").to_csv(METRICS / "daily_batch_deviation.csv")
     bad = day_dev[day_dev > threshold]
@@ -159,9 +215,8 @@ def cap_outliers(df: pd.DataFrame, iqr_k: float, q: float, report: dict) -> pd.D
 def impute(df: pd.DataFrame, limit: int, report: dict) -> pd.DataFrame:
     before = int(df[NUMERIC_IMPUTE].isna().sum().sum())
     df = df.sort_values(["location_name", "last_updated"])
-    df[NUMERIC_IMPUTE] = (
-        df.groupby("location_name")[NUMERIC_IMPUTE]
-        .transform(lambda s: s.interpolate(limit=limit, limit_direction="both"))
+    df[NUMERIC_IMPUTE] = df.groupby("location_name")[NUMERIC_IMPUTE].transform(
+        lambda s: s.interpolate(limit=limit, limit_direction="both")
     )
     df[NUMERIC_IMPUTE] = df.groupby("location_name")[NUMERIC_IMPUTE].transform(lambda s: s.fillna(s.median()))
     df[NUMERIC_IMPUTE] = df[NUMERIC_IMPUTE].fillna(df[NUMERIC_IMPUTE].median())
@@ -176,9 +231,12 @@ def impute(df: pd.DataFrame, limit: int, report: dict) -> pd.DataFrame:
 
 def clean(raw: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, dict]:
     cp = params["clean"]
-    report: dict = {"raw_rows": len(raw), "raw_locations": int(raw["location_name"].nunique()),
-                    "raw_countries": int(raw["country"].nunique()),
-                    "raw_missing_cells": int(raw.isna().sum().sum())}
+    report: dict = {
+        "raw_rows": len(raw),
+        "raw_locations": int(raw["location_name"].nunique()),
+        "raw_countries": int(raw["country"].nunique()),
+        "raw_missing_cells": int(raw.isna().sum().sum()),
+    }
     df = raw.drop(columns=[c for c in REDUNDANT if c in raw]).rename(columns=RENAME).copy()
     df["last_updated"] = pd.to_datetime(df["last_updated"])
     df["date"] = df["last_updated"].dt.normalize()
@@ -211,10 +269,16 @@ def clean(raw: pd.DataFrame, params: dict) -> tuple[pd.DataFrame, dict]:
     df = cap_outliers(df, cp["iqr_k"], cp["heavy_tail_quantile"], report)
     df = impute(df, cp["interpolate_limit"], report)
 
-    report.update({"clean_rows": len(df), "clean_locations": int(df["location_name"].nunique()),
-                   "clean_countries": int(df["country"].nunique()),
-                   "date_min": str(df["date"].min().date()), "date_max": str(df["date"].max().date()),
-                   "continent_counts": df.groupby("continent")["location_name"].nunique().to_dict()})
+    report.update(
+        {
+            "clean_rows": len(df),
+            "clean_locations": int(df["location_name"].nunique()),
+            "clean_countries": int(df["country"].nunique()),
+            "date_min": str(df["date"].min().date()),
+            "date_max": str(df["date"].max().date()),
+            "continent_counts": df.groupby("continent")["location_name"].nunique().to_dict(),
+        }
+    )
     return df.reset_index(drop=True), report
 
 

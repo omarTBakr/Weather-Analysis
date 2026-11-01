@@ -1,0 +1,187 @@
+continent,country,temp_mean,precip_mean,pm25_median
+Africa,Algeria,20.81,0.05,15.55
+Africa,Angola,25.22,0.03,21.5
+Africa,Benin,27.69,0.12,19.61
+Africa,Botswana,20.92,0.05,11.47
+Africa,Burkina Faso,27.56,0.06,23.5
+Africa,Burundi,25.2,0.16,21.3
+Africa,Cameroon,25.38,0.24,20.35
+Africa,Cape Verde,23.99,0.02,18.32
+Africa,Central African Republic,26.98,0.13,18.68
+Africa,Chad,28.9,0.05,27.6
+Africa,Comoros,26.39,0.21,7.65
+Africa,Congo,26.03,0.1,22.9
+Africa,Cote d'Ivoire,22.47,0.04,6.55
+Africa,Democratic Republic of Congo,25.9,0.1,22.76
+Africa,Djibouti,31.51,0.02,23.65
+Africa,Egypt,25.36,0.0,28.12
+Africa,Equatorial Guinea,26.48,0.33,9.55
+Africa,Eritrea,21.25,0.08,17.3
+Africa,Ethiopia,19.03,0.22,23.5
+Africa,Gabon,26.25,0.18,12.21
+Africa,Gambia,24.97,0.15,22.0
+Africa,Ghana,26.78,0.08,11.47
+Africa,Guinea,25.94,0.4,13.5
+Africa,Guinea-Bissau,25.37,0.29,19.2
+Africa,Kenya,20.63,0.09,16.55
+Africa,Lesotho,17.4,0.07,15.54
+Africa,Liberia,25.66,0.4,13.88
+Africa,Madagascar,24.65,0.06,5.55
+Africa,Malawi,22.98,0.09,8.51
+Africa,Mali,26.25,0.08,19.06
+Africa,Mauritania,23.62,0.01,45.25
+Africa,Mauritius,26.2,0.08,7.75
+Africa,Morocco,18.7,0.05,12.02
+Africa,Mozambique,24.4,0.05,8.65
+Africa,Namibia,19.78,0.02,4.81
+Africa,Niger,28.81,0.04,21.46
+Africa,Nigeria,26.33,0.14,33.3
+Africa,Rwanda,23.0,0.16,24.05
+Africa,Senegal,24.57,0.06,27.75
+Africa,Seychelles Islands,28.61,0.13,7.4
+Africa,Sierra Leone,25.75,0.4,12.85
+Africa,Somalia,28.46,0.04,10.25
+Africa,South Africa,19.2,0.05,23.31
+Africa,Sudan,29.79,0.01,30.42
+Africa,Swaziland,22.01,0.07,13.32
+Africa,Tanzania,24.14,0.06,7.77
+Africa,Tunisia,22.15,0.02,13.75
+Africa,Uganda,24.69,0.15,27.1
+Africa,Zambia,22.88,0.08,9.25
+Africa,Zimbabwe,21.53,0.08,13.35
+Asia,Afghanistan,20.02,0.03,15.55
+Asia,Armenia,17.61,0.04,10.05
+Asia,Azerbaijan,19.75,0.03,12.3
+Asia,Bahrain,30.21,0.0,57.9
+Asia,Bangladesh,31.3,0.26,41.07
+Asia,Bhutan,14.19,0.32,5.95
+Asia,Brunei Darussalam,29.7,0.45,13.35
+Asia,Cambodia,32.09,0.14,17.35
+Asia,China,19.84,0.07,95.83
+Asia,Cyprus,24.5,0.03,10.92
+Asia,Georgia,17.66,0.05,10.45
+Asia,India,30.71,0.06,91.0
+Asia,Indonesia,28.7,0.4,37.05
+Asia,Iran,20.03,0.03,27.01
+Asia,Iraq,29.76,0.02,27.0
+Asia,Israel,22.93,0.01,16.45
+Asia,Japan,20.95,0.14,31.26
+Asia,Jordan,21.49,0.02,17.75
+Asia,Kazakhstan,10.66,0.06,8.75
+Asia,Kuwait,31.64,0.01,81.3
+Asia,Kyrghyzstan,18.25,0.09,14.25
+Asia,Lebanon,23.37,0.05,24.3
+Asia,Malaysia,30.69,0.58,46.44
+Asia,Maldives,27.93,0.22,8.37
+Asia,Mongolia,6.07,0.05,9.8
+Asia,Myanmar,30.5,0.51,25.72
+Asia,Nepal,23.32,0.49,33.67
+Asia,North Korea,16.11,0.11,24.35
+Asia,Oman,31.8,0.0,33.6
+Asia,Pakistan,28.83,0.09,42.5
+Asia,Philippines,30.41,0.34,21.25
+Asia,Qatar,32.95,0.0,51.6
+Asia,Saudi Arabia,31.15,0.0,99.0
+Asia,Singapore,29.95,0.33,19.6
+Asia,South Korea,18.31,0.1,33.05
+Asia,Sri Lanka,30.03,0.43,19.8
+Asia,Syria,21.65,0.02,19.75
+Asia,Tajikistan,23.62,0.06,14.05
+Asia,Thailand,31.09,0.24,19.39
+Asia,Timor-Leste,26.33,0.34,6.8
+Asia,Turkmenistan,23.68,0.02,15.0
+Asia,Türkiye,16.99,0.06,17.39
+Asia,United Arab Emirates,32.51,0.0,50.8
+Asia,Uzbekistan,23.25,0.04,18.45
+Asia,Vietnam,27.54,0.26,44.77
+Asia,Yemen,22.12,0.03,21.09
+Europe,Albania,19.65,0.13,12.76
+Europe,Andorra,9.04,0.1,3.6
+Europe,Austria,13.5,0.06,12.02
+Europe,Belarus,10.33,0.08,10.36
+Europe,Belgium,13.21,0.08,12.62
+Europe,Bosnia and Herzegovina,13.02,0.14,19.55
+Europe,Bulgaria,14.88,0.08,12.4
+Europe,Croatia,14.65,0.09,14.8
+Europe,Czech Republic,11.66,0.07,12.4
+Europe,Denmark,11.37,0.08,7.4
+Europe,Estonia,9.82,0.09,6.2
+Europe,Finland,9.49,0.09,5.45
+Europe,France,13.86,0.09,11.85
+Europe,Germany,12.41,0.06,10.73
+Europe,Greece,22.14,0.04,14.05
+Europe,Hungary,14.77,0.05,11.95
+Europe,Iceland,6.45,0.19,4.02
+Europe,Ireland,11.09,0.13,6.6
+Europe,Italy,18.99,0.07,12.8
+Europe,Latvia,10.47,0.08,9.8
+Europe,Liechtenstein,10.36,0.17,6.29
+Europe,Lithuania,10.11,0.1,8.7
+Europe,Luxembourg,11.41,0.08,9.95
+Europe,Macedonia,16.91,0.05,19.15
+Europe,Malta,22.33,0.05,10.23
+Europe,Monaco,18.73,0.08,7.6
+Europe,Montenegro,18.98,0.15,12.21
+Europe,Netherlands,12.84,0.09,11.5
+Europe,Norway,8.44,0.1,7.2
+Europe,Poland,12.21,0.05,15.36
+Europe,Portugal,17.22,0.08,11.84
+Europe,Romania,16.19,0.05,14.98
+Europe,Russia,10.45,0.08,35.89
+Europe,San Marino,17.46,0.11,10.77
+Europe,Serbia,15.9,0.08,16.2
+Europe,Slovakia,13.91,0.06,12.02
+Europe,Slovenia,13.31,0.16,17.55
+Europe,Spain,16.39,0.05,11.1
+Europe,Sweden,10.39,0.06,5.18
+Europe,Switzerland,11.5,0.13,9.44
+Europe,Ukraine,12.84,0.05,11.66
+Europe,United Kingdom,12.72,0.07,9.3
+Europe,Vatican City,18.96,0.07,12.76
+North America,Antigua and Barbuda,26.47,0.11,9.04
+North America,Bahamas,25.08,0.1,7.3
+North America,Barbados,27.05,0.14,9.3
+North America,Belize,22.28,0.11,6.48
+North America,Canada,6.6,0.16,5.4
+North America,Costa Rica,19.36,0.12,10.18
+North America,Cuba,23.31,0.05,8.35
+North America,Dominica,26.64,0.12,9.2
+North America,Dominican Republic,24.04,0.12,12.05
+North America,El Salvador,23.43,0.24,18.5
+North America,Grenada,27.09,0.14,10.18
+North America,Guatemala,17.27,0.12,22.2
+North America,Haiti,21.38,0.03,33.85
+North America,Honduras,19.19,0.08,9.8
+North America,Jamaica,26.89,0.07,12.21
+North America,Mexico,14.82,0.08,39.24
+North America,Nicaragua,24.75,0.12,7.25
+North America,Panama,25.51,0.19,5.92
+North America,Saint Kitts and Nevis,26.73,0.13,7.35
+North America,Saint Lucia,27.04,0.14,9.75
+North America,Saint Vincent and the Grenadines,27.3,0.13,9.3
+North America,Trinidad and Tobago,25.11,0.19,8.05
+North America,United States of America,9.3,0.05,5.05
+Oceania,Australia,15.16,0.08,5.18
+Oceania,Fiji Islands,24.51,0.29,5.0
+Oceania,Kiribati,28.1,0.11,7.96
+Oceania,Marshall Islands,28.35,0.33,3.88
+Oceania,Micronesia,28.29,0.38,4.62
+Oceania,New Zealand,13.66,0.16,5.95
+Oceania,Palau,28.06,0.4,5.55
+Oceania,Papua New Guinea,26.83,0.4,7.9
+Oceania,Samoa,26.04,0.29,4.62
+Oceania,Solomon Islands,27.33,0.43,2.4
+Oceania,Tonga,23.63,0.17,7.6
+Oceania,Tuvalu,28.71,0.35,4.55
+Oceania,Vanuatu,24.94,0.21,7.95
+South America,Argentina,14.16,0.09,8.88
+South America,Bolivia,17.26,0.1,5.74
+South America,Brazil,24.26,0.19,5.55
+South America,Chile,10.93,0.08,60.31
+South America,Ecuador,10.39,0.08,7.6
+South America,Guyana,24.64,0.42,8.32
+South America,Paraguay,19.7,0.08,7.72
+South America,Peru,18.12,0.0,18.87
+South America,Suriname,24.22,0.18,6.84
+South America,Uruguay,13.82,0.09,8.88
+South America,Venezuela,21.95,0.08,11.66

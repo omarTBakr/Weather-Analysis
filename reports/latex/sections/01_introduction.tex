@@ -1,0 +1,20 @@
+\section{Introduction}
+The \emph{Global Weather Repository} (Kaggle, \texttt{nelgiriyewithana/global-weather-repository}) publishes one
+weather snapshot per day for the capital city of almost every country, with 41 columns covering temperature,
+wind, pressure, precipitation, humidity, cloud, visibility, UV, six air-quality pollutants, and astronomical data.
+The version analysed here (v1106) holds \textbf{170\,928 rows} from \textbf{16~May~2024 to 13~October~2026}.
+
+The goal is to forecast future weather trends and to show both basic and advanced data-science practice.
+The whole project is one reproducible pipeline. \textbf{DVC} versions the data and models and chains the stages.
+\textbf{MLflow} tracks every stage, model, metric, and artefact, and holds the model registry.
+The pipeline has eight stages:
+\begin{enumerate}
+  \item \textbf{download}: fetch the CSV from Kaggle;
+  \item \textbf{clean}: validity checks, de-duplication, corrupted-batch detection, outlier capping, imputation;
+  \item \textbf{features}: daily panel, lags, rolling statistics, calendar and diurnal features, time split, normalisation;
+  \item \textbf{eda}: distributions, temperature and precipitation trends, correlations, decomposition;
+  \item \textbf{anomaly}: Isolation Forest, LOF, temporal robust $z$-scores, batch-level detection;
+  \item \textbf{train} / \textbf{train\_global}: next-day city models and multi-step global-series models;
+  \item \textbf{ensemble}: mean, inverse-RMSE-weighted and stacked ensembles;
+  \item \textbf{analyses}: climate, air quality, feature importance, spatial, and geographic patterns.
+\end{enumerate}

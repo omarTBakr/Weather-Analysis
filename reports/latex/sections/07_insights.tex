@@ -1,0 +1,29 @@
+\section{Key insights}
+\begin{enumerate}
+  \item \textbf{Check how the data was collected before fitting any trend.} The local time of the daily
+        snapshot drifts from afternoon to early morning, which creates an artificial cooling of about
+        1.8\,\textdegree C/yr. Correcting for it removes most of that trend and improves multi-step
+        forecasts by about 40\,\%.
+  \item \textbf{The source feed has failures of its own.} One whole day (17~Aug~2026) is corrupted across all
+        cities. A batch-level detector catches it; a per-city outlier fence would not.
+  \item \textbf{Next-day temperature is mostly persistence.} The stacked ensemble improves RMSE on persistence
+        by 12\,\% (1.84 against 2.09\,\textdegree C), and ensembles beat every single model.
+  \item \textbf{Global seasonal trends are highly predictable.} The global mean is forecast 60 days ahead
+        with an RMSE of about 0.35\,\textdegree C.
+  \item \textbf{Air quality is mostly local.} Ozone follows sunshine and heat. PM2.5 is driven mostly by
+        location, and weather explains only a small share of its day-to-day variation.
+  \item \textbf{Climate has strong spatial structure.} Temperature and humidity have Moran's $I$ near 0.7,
+        and the size of the annual cycle is largely set by latitude.
+\end{enumerate}
+
+\paragraph{Limitations.} The record covers about 2.4 years, so long-term climate trends cannot be estimated.
+There is one instantaneous snapshot per day, not a daily mean or extreme. Some locations are geocoding
+homonyms. Pollutant values come from a model-based feed.
+
+\paragraph{Next steps.}
+\begin{itemize}
+  \item Aggregate the 15-minute API data, or re-weight observations by local hour.
+  \item Add multi-horizon direct models for days 1--7.
+  \item Add probabilistic forecasts (quantile LightGBM).
+  \item Add ERA5 reanalysis as a long-term baseline.
+\end{itemize}

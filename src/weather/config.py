@@ -1,4 +1,5 @@
 """Paths, parameters and MLflow setup shared by every pipeline stage."""
+
 from __future__ import annotations
 
 import os

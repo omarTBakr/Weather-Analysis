@@ -26,8 +26,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "black>=26.10.1",
     "ipykernel>=7.4.0",
+    "pre-commit>=4.7.0",
     "pytest>=9.2.0",
+    "ruff>=0.17.3",
 ]
 
 [build-system]
@@ -39,3 +42,19 @@ packages = ["src/weather"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.black]
+line-length = 120
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "NPY", "PD002"]
+ignore = ["E501", "E702"]  # line length is black's job; `a; b` used sparingly in plotting code
+
+[tool.ruff.lint.isort]
+known-first-party = ["weather"]

@@ -1,4 +1,5 @@
 """Shared matplotlib style (validated categorical palette, recessive chrome) for report figures."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,7 +26,7 @@ DIV_CMAP = matplotlib.colors.LinearSegmentedColormap.from_list(
 CRITICAL = "#d03b3b"
 
 CONTINENT_ORDER = ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"]
-CONTINENT_COLORS = dict(zip(CONTINENT_ORDER, SERIES))
+CONTINENT_COLORS = dict(zip(CONTINENT_ORDER, SERIES, strict=False))
 
 
 def apply_style() -> None:

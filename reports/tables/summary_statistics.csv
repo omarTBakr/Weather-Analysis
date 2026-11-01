@@ -1,4 +1,4 @@
-,mean,std,min,50%,max
+,mean,std,min,median,max
 Temperature,21.46,9.26,-29.8,23.6,49.2
 Feels like,22.17,11.12,-36.7,24.9,51.2
 Humidity,66.8,23.48,2.0,72.0,100.0

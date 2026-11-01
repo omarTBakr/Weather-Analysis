@@ -1,4 +1,5 @@
 """Stage `features`: daily panel, lag/rolling/calendar features, time-based split, train-only scaling."""
+
 from __future__ import annotations
 
 import json
@@ -9,15 +10,37 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 from weather.config import (
-    CLEAN_PATH, DAILY_PATH, FEATURES_PATH, GLOBAL_SERIES_PATH, METRICS, MODELS,
-    ensure_dirs, load_params, setup_mlflow,
+    CLEAN_PATH,
+    DAILY_PATH,
+    FEATURES_PATH,
+    GLOBAL_SERIES_PATH,
+    METRICS,
+    MODELS,
+    ensure_dirs,
+    load_params,
+    setup_mlflow,
 )
 
 STATIC = ["country", "continent", "latitude", "longitude", "timezone"]
 DAILY_NUMERIC = [
-    "temperature_celsius", "feels_like_celsius", "humidity", "pressure_mb", "wind_kph", "gust_kph",
-    "cloud", "precip_mm", "uv_index", "visibility_km",
-    "aq_co", "aq_o3", "aq_no2", "aq_so2", "aq_pm25", "aq_pm10", "aq_us_epa_index", "aq_gb_defra_index",
+    "temperature_celsius",
+    "feels_like_celsius",
+    "humidity",
+    "pressure_mb",
+    "wind_kph",
+    "gust_kph",
+    "cloud",
+    "precip_mm",
+    "uv_index",
+    "visibility_km",
+    "aq_co",
+    "aq_o3",
+    "aq_no2",
+    "aq_so2",
+    "aq_pm25",
+    "aq_pm10",
+    "aq_us_epa_index",
+    "aq_gb_defra_index",
     "local_hour",
 ]
 CONTINENT_CODES = {"Africa": 0, "Asia": 1, "Europe": 2, "North America": 3, "South America": 4, "Oceania": 5}
@@ -78,8 +101,9 @@ def add_features(daily: pd.DataFrame, fp: dict) -> tuple[pd.DataFrame, list[str]
     feat["abs_latitude"] = feat["latitude"].abs()
     feat["continent_code"] = feat["continent"].map(CONTINENT_CODES).fillna(-1).astype(int)
 
-    feature_cols = [c for c in feat.columns if c not in
-                    {"date", "target", "target_date", "location_name", "country", "continent"}]
+    feature_cols = [
+        c for c in feat.columns if c not in {"date", "target", "target_date", "location_name", "country", "continent"}
+    ]
     feat = feat.dropna(subset=feature_cols + ["target"]).reset_index(drop=True)
     return feat, feature_cols
 
@@ -140,22 +164,34 @@ def main() -> None:
     gs.to_parquet(GLOBAL_SERIES_PATH, index=False)
 
     split_info = {
-        s: {"rows": int((feat["split"] == s).sum()),
+        s: {
+            "rows": int((feat["split"] == s).sum()),
             "start": str(feat.loc[feat["split"] == s, "target_date"].min().date()),
-            "end": str(feat.loc[feat["split"] == s, "target_date"].max().date())}
+            "end": str(feat.loc[feat["split"] == s, "target_date"].max().date()),
+        }
         for s in ["train", "val", "test"]
     }
-    report = {"daily_rows": len(daily), "feature_rows": len(feat), "n_features": len(feature_cols),
-              "global_series_days": len(gs), "global_series_locations": int(gs["n_locations"].median()),
-              "split": split_info}
+    report = {
+        "daily_rows": len(daily),
+        "feature_rows": len(feat),
+        "n_features": len(feature_cols),
+        "global_series_days": len(gs),
+        "global_series_locations": int(gs["n_locations"].median()),
+        "split": split_info,
+    }
     (METRICS / "features_report.json").write_text(json.dumps(report, indent=2))
 
     mlflow = setup_mlflow()
     with mlflow.start_run(run_name="features"):
         mlflow.set_tag("stage", "features")
         mlflow.log_params({**{f"features.{k}": v for k, v in fp.items()}, **{f"split.{k}": v for k, v in sp.items()}})
-        mlflow.log_metrics({"feature_rows": len(feat), "n_features": len(feature_cols),
-                            **{f"{s}_rows": v["rows"] for s, v in split_info.items()}})
+        mlflow.log_metrics(
+            {
+                "feature_rows": len(feat),
+                "n_features": len(feature_cols),
+                **{f"{s}_rows": v["rows"] for s, v in split_info.items()},
+            }
+        )
         mlflow.log_artifact(str(MODELS / "feature_columns.json"))
         mlflow.log_artifact(str(METRICS / "features_report.json"))
     print(json.dumps(report, indent=2))

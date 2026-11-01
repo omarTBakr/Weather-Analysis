@@ -1,0 +1,573 @@
+schema: '2.0'
+stages:
+  download:
+    cmd: python -m weather.download
+    deps:
+    - path: src/weather/download.py
+      hash: md5
+      md5: b71764ff73ea07b2889bf5e1d21274ec
+      size: 1744
+      isexec: true
+    params:
+      params.yaml:
+        data:
+          kaggle_dataset: nelgiriyewithana/global-weather-repository
+          kaggle_file: GlobalWeatherRepository.csv
+          raw_path: data/raw/GlobalWeatherRepository.csv
+    outs:
+    - path: data/raw/GlobalWeatherRepository.csv
+      hash: md5
+      md5: 52b6f18bd2de5ed304112c839f6881f5
+      size: 45066643
+      isexec: true
+  clean:
+    cmd: python -m weather.clean
+    deps:
+    - path: data/raw/GlobalWeatherRepository.csv
+      hash: md5
+      md5: 52b6f18bd2de5ed304112c839f6881f5
+      size: 45066643
+      isexec: true
+    - path: src/weather/clean.py
+      hash: md5
+      md5: 0c376aa80f3875a097bea67ff13bc2e5
+      size: 11078
+      isexec: true
+    - path: src/weather/config.py
+      hash: md5
+      md5: 51d2b11e0e311b0e982b39238688f391
+      size: 1533
+      isexec: true
+    params:
+      params.yaml:
+        clean:
+          min_obs_per_location: 365
+          iqr_k: 3.0
+          heavy_tail_quantile: 0.999
+          interpolate_limit: 3
+          corrupt_day_threshold_c: 4.0
+    outs:
+    - path: data/interim/clean.parquet
+      hash: md5
+      md5: 10060130198d5219e33c2b09c6567db0
+      size: 5563505
+      isexec: true
+    - path: reports/metrics/clean_report.json
+      hash: md5
+      md5: 7255556faba18320257baf2177c88924
+      size: 1348
+      isexec: true
+    - path: reports/metrics/daily_batch_deviation.csv
+      hash: md5
+      md5: 37c37e7f23f27fcf45a6c990c6d22219
+      size: 21541
+      isexec: true
+  features:
+    cmd: python -m weather.features
+    deps:
+    - path: data/interim/clean.parquet
+      hash: md5
+      md5: 10060130198d5219e33c2b09c6567db0
+      size: 5563505
+      isexec: true
+    - path: src/weather/features.py
+      hash: md5
+      md5: bd9d7add82d3d05b3f18cadb6b7a4e04
+      size: 7817
+      isexec: true
+    params:
+      params.yaml:
+        clean.interpolate_limit: 3
+        features:
+          target: temperature_celsius
+          horizon: 1
+          lags:
+          - 1
+          - 2
+          - 3
+          - 7
+          - 14
+          rolling_windows:
+          - 3
+          - 7
+          - 14
+          exog:
+          - humidity
+          - pressure_mb
+          - wind_kph
+          - cloud
+          - precip_mm
+          - uv_index
+          - feels_like_celsius
+          - visibility_km
+          - gust_kph
+        global_series.min_coverage: 0.95
+        split:
+          test_days: 60
+          val_days: 60
+    outs:
+    - path: data/processed/daily.parquet
+      hash: md5
+      md5: 4218e7db819d655fd4c696eec4b58796
+      size: 3776208
+      isexec: true
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 0fc67299f3603fbf2ba9a1ad391ccb62
+      size: 9295327
+      isexec: true
+    - path: data/processed/global_series.parquet
+      hash: md5
+      md5: 0294c4207abcb7c50088a346fac2f025
+      size: 48707
+      isexec: true
+    - path: models/feature_columns.json
+      hash: md5
+      md5: e9d0c115055b24eac6c8e9e5dc48a0b4
+      size: 560
+      isexec: true
+    - path: models/scaler.joblib
+      hash: md5
+      md5: 55543e2392e1d95c8be855f3d34fadad
+      size: 2103
+      isexec: true
+    - path: reports/metrics/features_report.json
+      hash: md5
+      md5: 0520c268abf5f4b228e87a8c56ac0050
+      size: 444
+      isexec: true
+  eda:
+    cmd: python -m weather.eda
+    deps:
+    - path: data/interim/clean.parquet
+      hash: md5
+      md5: 10060130198d5219e33c2b09c6567db0
+      size: 5563505
+      isexec: true
+    - path: data/processed/daily.parquet
+      hash: md5
+      md5: 4218e7db819d655fd4c696eec4b58796
+      size: 3776208
+      isexec: true
+    - path: data/processed/global_series.parquet
+      hash: md5
+      md5: 0294c4207abcb7c50088a346fac2f025
+      size: 48707
+      isexec: true
+    - path: reports/metrics/clean_report.json
+      hash: md5
+      md5: 7255556faba18320257baf2177c88924
+      size: 1348
+      isexec: true
+    - path: src/weather/eda.py
+      hash: md5
+      md5: 6c9ac65bdaa068c14f88ebd16e340b8f
+      size: 14538
+      isexec: true
+    - path: src/weather/plotting.py
+      hash: md5
+      md5: 3eeb05b7e07c034d7d8c435ba9af4ec0
+      size: 2372
+      isexec: true
+    outs:
+    - path: reports/figures/eda
+      hash: md5
+      md5: 25a14492b3c3ef072c3aa2297d1c8792.dir
+      size: 1106475
+      nfiles: 11
+    - path: reports/metrics/eda.json
+      hash: md5
+      md5: f55a54b62dff676a5fb57b9b7dad21c8
+      size: 452
+      isexec: true
+    - path: reports/tables/summary_statistics.csv
+      hash: md5
+      md5: 565fa64b9ecfdb5b2874e6e41c139df9
+      size: 573
+      isexec: true
+    - path: reports/tables/summary_statistics.tex
+      hash: md5
+      md5: 135b42e0b1e2c9c6e065760aec4d424f
+      size: 1004
+      isexec: true
+  anomaly:
+    cmd: python -m weather.anomaly
+    deps:
+    - path: data/interim/clean.parquet
+      hash: md5
+      md5: 10060130198d5219e33c2b09c6567db0
+      size: 5563505
+      isexec: true
+    - path: data/processed/global_series.parquet
+      hash: md5
+      md5: 0294c4207abcb7c50088a346fac2f025
+      size: 48707
+      isexec: true
+    - path: reports/metrics/daily_batch_deviation.csv
+      hash: md5
+      md5: 37c37e7f23f27fcf45a6c990c6d22219
+      size: 21541
+      isexec: true
+    - path: src/weather/anomaly.py
+      hash: md5
+      md5: 15d32ba9ed73159f1c59998de4fe395b
+      size: 12838
+      isexec: true
+    - path: src/weather/eda.py
+      hash: md5
+      md5: 6c9ac65bdaa068c14f88ebd16e340b8f
+      size: 14538
+      isexec: true
+    params:
+      params.yaml:
+        anomaly:
+          contamination: 0.01
+          lof_neighbors: 35
+          z_thresh: 3.5
+          global_z_thresh: 3.0
+          sample_size: 60000
+        clean.corrupt_day_threshold_c: 4.0
+        seed: 42
+    outs:
+    - path: reports/figures/anomaly
+      hash: md5
+      md5: e340d4a3507c2abcaa465321e17f16f9.dir
+      size: 668828
+      nfiles: 7
+    - path: reports/metrics/anomaly.json
+      hash: md5
+      md5: e0b8fff48e7318c0d953a5f8caa321e2
+      size: 376
+      isexec: true
+    - path: reports/tables/global_anomalies.csv
+      hash: md5
+      md5: a68238c08c50f61264a282cc8ca29586
+      size: 108
+      isexec: true
+    - path: reports/tables/top_anomalies.csv
+      hash: md5
+      md5: 694385543582508c6ce0a2938e599e7a
+      size: 4943
+      isexec: true
+    - path: reports/tables/top_anomalies.tex
+      hash: md5
+      md5: 9643d4130deb89136e023ac4ec5eb23e
+      size: 867
+      isexec: true
+  train:
+    cmd: python -m weather.train
+    deps:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 0fc67299f3603fbf2ba9a1ad391ccb62
+      size: 9295327
+      isexec: true
+    - path: models/feature_columns.json
+      hash: md5
+      md5: e9d0c115055b24eac6c8e9e5dc48a0b4
+      size: 560
+      isexec: true
+    - path: models/scaler.joblib
+      hash: md5
+      md5: 55543e2392e1d95c8be855f3d34fadad
+      size: 2103
+      isexec: true
+    - path: src/weather/metrics.py
+      hash: md5
+      md5: e177e73412b3f15d01fc23516a193b74
+      size: 1018
+      isexec: true
+    - path: src/weather/mlflow_utils.py
+      hash: md5
+      md5: 616a745b15f7adacd9ca845127dc04ca
+      size: 1616
+      isexec: true
+    - path: src/weather/train.py
+      hash: md5
+      md5: d43b8df237fa5bfa4a524c4cb64ff1ff
+      size: 6158
+      isexec: true
+    params:
+      params.yaml:
+        features.horizon: 1
+        models:
+          ridge:
+            alpha: 1.0
+          random_forest:
+            n_estimators: 200
+            max_depth: 16
+            min_samples_leaf: 5
+            max_features: 0.5
+          xgboost:
+            n_estimators: 2000
+            learning_rate: 0.05
+            max_depth: 7
+            subsample: 0.8
+            colsample_bytree: 0.8
+            early_stopping_rounds: 100
+          lightgbm:
+            n_estimators: 3000
+            learning_rate: 0.03
+            num_leaves: 63
+            subsample: 0.8
+            subsample_freq: 1
+            colsample_bytree: 0.8
+            early_stopping_rounds: 100
+        seed: 42
+    outs:
+    - path: data/processed/predictions.parquet
+      hash: md5
+      md5: 725e768afc45a2b1ba096c64b3a0862b
+      size: 875636
+      isexec: true
+    - path: models/lightgbm.joblib
+      hash: md5
+      md5: 9e5a44048adfbf27ecc88e1057fedb30
+      size: 4137889
+      isexec: true
+    - path: models/random_forest.joblib
+      hash: md5
+      md5: 6b675d113a66359db3a8e72bbc082185
+      size: 180137473
+      isexec: true
+    - path: models/ridge.joblib
+      hash: md5
+      md5: a61338c33c3ba23141dcb573fd6a28b4
+      size: 2849
+      isexec: true
+    - path: models/xgboost.joblib
+      hash: md5
+      md5: 23e4c726c84f8e186264bb6cae3edac0
+      size: 3491706
+      isexec: true
+    - path: reports/metrics/train_panel.json
+      hash: md5
+      md5: 8a2c91b75e4db67da80b19a4f39937e0
+      size: 2582
+      isexec: true
+  train_global:
+    cmd: python -m weather.train_global
+    deps:
+    - path: data/processed/global_series.parquet
+      hash: md5
+      md5: 0294c4207abcb7c50088a346fac2f025
+      size: 48707
+      isexec: true
+    - path: src/weather/metrics.py
+      hash: md5
+      md5: e177e73412b3f15d01fc23516a193b74
+      size: 1018
+      isexec: true
+    - path: src/weather/train_global.py
+      hash: md5
+      md5: 5b5ddf11fc7f57588875f711e1af8243
+      size: 9472
+      isexec: true
+    params:
+      params.yaml:
+        global_series:
+          min_coverage: 0.95
+          fourier_order: 4
+          future_days: 90
+        split.test_days: 60
+    outs:
+    - path: reports/figures/forecast_global
+      hash: md5
+      md5: 5332094167db511f570606865ae17189.dir
+      size: 226397
+      nfiles: 2
+    - path: reports/metrics/train_global.json
+      hash: md5
+      md5: d635eded2339b07191ae7b855c7fb293
+      size: 1479
+      isexec: true
+    - path: reports/tables/global_future_forecast.csv
+      hash: md5
+      md5: ab02d1b80c2c8fae2a46dc03bedaec14
+      size: 6082
+      isexec: true
+    - path: reports/tables/global_model_comparison.csv
+      hash: md5
+      md5: c3052bfe28300c600c215e64dee2cd9f
+      size: 559
+      isexec: true
+    - path: reports/tables/global_model_comparison.tex
+      hash: md5
+      md5: 883a482af7186adbacde972ed670bf93
+      size: 536
+      isexec: true
+  ensemble:
+    cmd: python -m weather.ensemble
+    deps:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 0fc67299f3603fbf2ba9a1ad391ccb62
+      size: 9295327
+      isexec: true
+    - path: data/processed/predictions.parquet
+      hash: md5
+      md5: 725e768afc45a2b1ba096c64b3a0862b
+      size: 875636
+      isexec: true
+    - path: models/lightgbm.joblib
+      hash: md5
+      md5: 9e5a44048adfbf27ecc88e1057fedb30
+      size: 4137889
+      isexec: true
+    - path: models/random_forest.joblib
+      hash: md5
+      md5: 6b675d113a66359db3a8e72bbc082185
+      size: 180137473
+      isexec: true
+    - path: models/ridge.joblib
+      hash: md5
+      md5: a61338c33c3ba23141dcb573fd6a28b4
+      size: 2849
+      isexec: true
+    - path: models/xgboost.joblib
+      hash: md5
+      md5: 23e4c726c84f8e186264bb6cae3edac0
+      size: 3491706
+      isexec: true
+    - path: src/weather/ensemble.py
+      hash: md5
+      md5: 2a971904409a0db124de0ef6977081c5
+      size: 10526
+      isexec: true
+    - path: src/weather/ensemble_model.py
+      hash: md5
+      md5: a8233787a1d2fe58befd68c01d58b037
+      size: 855
+      isexec: true
+    outs:
+    - path: models/ensemble_config.json
+      hash: md5
+      md5: 758bb325ffcb7f4dfacf994e4003a875
+      size: 860
+      isexec: true
+    - path: reports/figures/forecast_panel
+      hash: md5
+      md5: db72f4672cc76703633789998921186b.dir
+      size: 554733
+      nfiles: 4
+    - path: reports/metrics/ensemble.json
+      hash: md5
+      md5: 1ad7e089c5919d420d356205b1a47f29
+      size: 2801
+      isexec: true
+    - path: reports/tables/model_comparison.csv
+      hash: md5
+      md5: 46c384c38f785218d80771a81104b01f
+      size: 1230
+      isexec: true
+    - path: reports/tables/model_comparison.tex
+      hash: md5
+      md5: 2bfa6316f8dc0be11244c624795bb542
+      size: 980
+      isexec: true
+    - path: reports/tables/rmse_by_continent.csv
+      hash: md5
+      md5: 3c0eb0eb096cab5f56c36ef5c0d8d0d4
+      size: 1102
+      isexec: true
+  analyses:
+    cmd: python -m weather.analyses
+    deps:
+    - path: data/processed/daily.parquet
+      hash: md5
+      md5: 4218e7db819d655fd4c696eec4b58796
+      size: 3776208
+      isexec: true
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 0fc67299f3603fbf2ba9a1ad391ccb62
+      size: 9295327
+      isexec: true
+    - path: models/feature_columns.json
+      hash: md5
+      md5: e9d0c115055b24eac6c8e9e5dc48a0b4
+      size: 560
+      isexec: true
+    - path: models/lightgbm.joblib
+      hash: md5
+      md5: 9e5a44048adfbf27ecc88e1057fedb30
+      size: 4137889
+      isexec: true
+    - path: src/weather/analyses.py
+      hash: md5
+      md5: 531fbf3213491ba78553b0c8b3365998
+      size: 28977
+      isexec: true
+    params:
+      params.yaml:
+        analyses:
+          shap_sample: 3000
+          permutation_sample: 20000
+        seed: 42
+        split.test_days: 60
+    outs:
+    - path: reports/figures/analyses
+      hash: md5
+      md5: 50d3309acbbcfd01f1d631750403a011.dir
+      size: 2443450
+      nfiles: 20
+    - path: reports/maps
+      hash: md5
+      md5: ff9148dd44d3100f17318b18d8acbb39.dir
+      size: 295282
+      nfiles: 4
+    - path: reports/metrics/analyses.json
+      hash: md5
+      md5: 8de05e993c1a18bd28c92cc884f30a75
+      size: 1409
+      isexec: true
+    - path: reports/tables/airquality_pooled_corr.csv
+      hash: md5
+      md5: 78d5b4576a6dd5bdcbd74538c534662b
+      size: 447
+      isexec: true
+    - path: reports/tables/airquality_within_city_corr.csv
+      hash: md5
+      md5: d220c626375fb10659e1077747d63463
+      size: 451
+      isexec: true
+    - path: reports/tables/continent_summary.csv
+      hash: md5
+      md5: f46ba1a3c326bb62fa77d7a3de58badf
+      size: 378
+      isexec: true
+    - path: reports/tables/continent_summary.tex
+      hash: md5
+      md5: 3c196afac90da54092304dec62d4aac1
+      size: 729
+      isexec: true
+    - path: reports/tables/country_summary.csv
+      hash: md5
+      md5: 69e7ad2fc289c2c0977388693cd899fe
+      size: 6305
+      isexec: true
+    - path: reports/tables/feature_importance.csv
+      hash: md5
+      md5: 26f689ec915c5ece65376b2f215f7daf
+      size: 3429
+      isexec: true
+    - path: reports/tables/feature_importance.tex
+      hash: md5
+      md5: 3286067cb2e95f511209788013479ffc
+      size: 1163
+      isexec: true
+    - path: reports/tables/location_climate_trends.csv
+      hash: md5
+      md5: 3864e4ac83261f13363f9b041c88c61d
+      size: 28731
+      isexec: true
+    - path: reports/tables/location_summary.csv
+      hash: md5
+      md5: 6ec6d457debf75103ea32dbdb0b4040d
+      size: 27778
+      isexec: true
+    - path: reports/tables/morans_i.csv
+      hash: md5
+      md5: 5dbff910b6d15a6aa8ca1f4eee276fa9
+      size: 152
+      isexec: true

@@ -3,6 +3,7 @@
 Uses kagglehub's single-file download (the full-archive endpoint has been observed to return
 an empty zip for this dataset), with a direct Kaggle REST fallback using ~/.kaggle/kaggle.json.
 """
+
 from __future__ import annotations
 
 import json
