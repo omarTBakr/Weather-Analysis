@@ -1,6 +1,6 @@
 import numpy as np
 
-from weather.features import add_features, time_split
+from weather.data.features import add_features, time_split
 from weather.utils.config import FeatureSettings
 
 FP = FeatureSettings(

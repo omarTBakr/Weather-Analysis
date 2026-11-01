@@ -76,7 +76,7 @@ Stacking weights, learned on the validation window only: XGBoost 0.49, LightGBM 
 
 ## Methodology
 
-### 1. Data cleaning & preprocessing — `src/weather/clean.py`, `features.py`
+### 1. Data cleaning & preprocessing — `src/weather/data/clean.py`, `data/features.py`
 - **Schema.** Drop the 7 redundant imperial columns, parse `last_updated`, and keep the snapshot's **local hour** as a covariate.
 - **Coverage.** Drop 71 one-off or mis-named locations with fewer than 365 days of data. Map translated country names (*Polônia*, Cyrillic, Chinese) back to each location's canonical name. Add continents via `pycountry-convert` plus overrides. Collapse 385 same-day duplicates.
 - **Validity.** Values outside physical ranges become NaN (pressure 3,006 mb, wind 2,963 kph, sentinel −9999).
@@ -91,21 +91,21 @@ Stacking weights, learned on the validation window only: XGBoost 0.49, LightGBM 
   - latitude, longitude and continent.
 - **Split.** Strictly by date: last 60 days = test, the 60 days before = validation, the rest = train.
 
-### 2. Exploratory data analysis — `eda.py`
+### 2. Exploratory data analysis — `analysis/eda.py`
 - Temperature distributions and monthly curves per continent.
 - Precipitation distribution: 67 % of snapshots are dry, and wet-day amounts are roughly log-normal.
 - Continent × month precipitation heatmap and the wettest capitals.
 - Spearman correlation matrix and weather-condition frequencies.
 - **Harmonic-regression decomposition** of the global mean. STL is degenerate with only about 2.4 annual cycles.
 
-### 3. Anomaly detection — `anomaly.py`
+### 3. Anomaly detection — `analysis/anomaly.py`
 Anomalies are measured against each city's **own climate**: temperature against the city-and-month mean, other variables against the city mean.
 - **Isolation Forest** (1 %) and **LOF** for unusual multivariate combinations. They are driven mainly by extreme precipitation, low visibility and humidity.
 - **Temporal robust z-score** against a 15-day rolling median (2.6 % flagged).
 - **Batch-level detector** for days when the data provider failed.
 - Agreement between detectors is reported (Isolation Forest vs LOF Jaccard ≈ 0.11), along with a top-anomalies table.
 
-### 4. Forecasting — `train.py`, `train_global.py`, `ensemble.py`
+### 4. Forecasting — `modeling/train.py`, `modeling/train_global.py`, `modeling/ensemble.py`
 - **City panel, next-day forecast.**
   - Models: persistence, ridge, random forest, XGBoost and LightGBM (both with early stopping on validation).
   - Ensembles: mean, inverse-validation-RMSE weights, and NNLS **stacking**.
@@ -115,7 +115,7 @@ Anomalies are measured against each city's **own climate**: temperature against 
   - The best model is refitted to project the **next 90 days with 95 % prediction intervals**.
 - **Metrics.** MAE, RMSE, sMAPE, R², % within 2 °C, and skill against persistence. MAPE is computed only where |y| ≥ 1 °C, because it explodes near 0 °C.
 
-### 5. Advanced analyses — `analyses.py`
+### 5. Advanced analyses — `insights/`
 - **Climate.** Per-city trend regressions, naive vs observation-hour adjusted. Latitude-band seasonality, where the hemispheres run in opposite phase. The annual range scales with |latitude| (r = 0.84); Ulaanbaatar has a 42 °C swing.
 - **Environmental impact.** Pooled vs **within-city** correlations between pollutants and weather:
   - ozone tracks temperature and UV (ρ ≈ 0.31);
@@ -165,18 +165,28 @@ Interactive maps (open locally): [`reports/maps/capitals_weather_map.html`](repo
 ├── pyproject.toml / uv.lock # environment (uv) + ruff/black/pytest config
 ├── .pre-commit-config.yaml  # ruff (lint+fix) + black (format) before every commit
 ├── src/weather/
-│   ├── utils/config.py      # pydantic Settings (nested BaseModels) built from .env; cached get_settings(), MLflow setup
-│   ├── download.py          # Kaggle download (kagglehub, REST fallback)
-│   ├── clean.py             # validity, dedup, corrupted batches, outliers, imputation, continents
-│   ├── features.py          # daily panel, lags/rolling/calendar/diurnal features, split, scaler
-│   ├── eda.py               # EDA figures + harmonic decomposition
-│   ├── anomaly.py           # Isolation Forest, LOF, temporal & batch-level detection
-│   ├── train.py             # next-day panel models (nested MLflow runs, registry)
-│   ├── train_global.py      # multi-step global-series models + 90-day projection
-│   ├── ensemble.py          # mean / weighted / stacking ensembles, pyfunc registration
-│   ├── ensemble_model.py    # MLflow pyfunc wrapper for the ensemble
-│   ├── analyses.py          # climate, air quality, feature importance, spatial, geographic
-│   ├── metrics.py, plotting.py, mlflow_utils.py
+│   ├── utils/
+│   │   ├── config.py        # pydantic Settings (nested BaseModels) built from .env; cached get_settings(), MLflow setup
+│   │   ├── plotting.py      # matplotlib style + palette helpers
+│   │   ├── metrics.py       # regression metrics
+│   │   └── mlflow_utils.py  # MLflow logging helpers
+│   ├── data/
+│   │   ├── download.py      # Kaggle download (kagglehub, REST fallback)
+│   │   ├── clean.py         # validity, dedup, corrupted batches, outliers, imputation, continents
+│   │   └── features.py      # daily panel, lags/rolling/calendar/diurnal features, split, scaler
+│   ├── analysis/
+│   │   ├── eda.py           # EDA figures
+│   │   ├── anomaly.py       # Isolation Forest, LOF, temporal & batch-level detection
+│   │   └── decomposition.py # harmonic decomposition of the global series (used by eda + anomaly)
+│   ├── modeling/
+│   │   ├── train.py         # next-day panel models (nested MLflow runs, registry)
+│   │   ├── train_global.py  # multi-step global-series models + 90-day projection
+│   │   ├── ensemble.py      # mean / weighted / stacking ensembles, pyfunc registration
+│   │   └── ensemble_model.py# MLflow pyfunc wrapper for the ensemble
+│   └── insights/            # stage `analyses` (entry point: run.py)
+│       ├── common.py        # shared output dir + label dictionaries
+│       ├── climate.py, air_quality.py, feature_importance.py, spatial.py, geographic.py
+│       └── run.py           # runs every analysis, writes reports/metrics/analyses.json, logs to MLflow
 ├── tests/                   # pytest: cleaning rules, leakage-free features/split, metrics
 ├── reports/
 │   ├── figures/             # all figures (committed; DVC outputs with cache: false)

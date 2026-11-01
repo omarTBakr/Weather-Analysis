@@ -12,9 +12,9 @@ from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 
-from weather.eda import harmonic_decomposition
-from weather.plotting import CONTINENT_ORDER, CRITICAL, INK_2, MUTED, SERIES, apply_style, save
+from weather.analysis.decomposition import harmonic_decomposition
 from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
+from weather.utils.plotting import CONTINENT_ORDER, CRITICAL, INK_2, MUTED, SERIES, apply_style, save
 
 S = get_settings()
 P = S.paths

@@ -16,9 +16,9 @@ import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-from weather.metrics import regression_metrics
-from weather.plotting import INK_2, MUTED, SERIES, apply_style, save
 from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
+from weather.utils.metrics import regression_metrics
+from weather.utils.plotting import INK_2, MUTED, SERIES, apply_style, save
 
 S = get_settings()
 P = S.paths

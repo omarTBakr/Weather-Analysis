@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from weather.clean import apply_valid_ranges, canonical_country, country_to_continent, null_corrupted_days
+from weather.data.clean import apply_valid_ranges, canonical_country, country_to_continent, null_corrupted_days
 
 
 def test_country_to_continent_handles_overrides_and_lookup():

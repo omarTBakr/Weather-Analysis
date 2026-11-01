@@ -1,6 +1,6 @@
 import numpy as np
 
-from weather.metrics import regression_metrics
+from weather.utils.metrics import regression_metrics
 
 
 def test_perfect_forecast():

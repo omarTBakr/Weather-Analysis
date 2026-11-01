@@ -5,21 +5,21 @@
 # data and model binaries are cached by DVC and pushed to the DVC remote.
 stages:
   download:
-    cmd: python -m weather.download
+    cmd: python -m weather.data.download
     deps:
       - .env
       - src/weather/utils/config.py
-      - src/weather/download.py
+      - src/weather/data/download.py
     outs:
       - data/raw/GlobalWeatherRepository.csv
 
   clean:
-    cmd: python -m weather.clean
+    cmd: python -m weather.data.clean
     deps:
       - .env
       - src/weather/utils/config.py
       - data/raw/GlobalWeatherRepository.csv
-      - src/weather/clean.py
+      - src/weather/data/clean.py
     outs:
       - data/interim/clean.parquet
       - reports/metrics/daily_batch_deviation.csv:
@@ -29,12 +29,12 @@ stages:
           cache: false
 
   features:
-    cmd: python -m weather.features
+    cmd: python -m weather.data.features
     deps:
       - .env
       - src/weather/utils/config.py
       - data/interim/clean.parquet
-      - src/weather/features.py
+      - src/weather/data/features.py
     outs:
       - data/processed/daily.parquet
       - data/processed/features.parquet
@@ -46,7 +46,7 @@ stages:
           cache: false
 
   eda:
-    cmd: python -m weather.eda
+    cmd: python -m weather.analysis.eda
     deps:
       - .env
       - src/weather/utils/config.py
@@ -54,8 +54,9 @@ stages:
       - data/processed/daily.parquet
       - data/processed/global_series.parquet
       - reports/metrics/clean_report.json
-      - src/weather/eda.py
-      - src/weather/plotting.py
+      - src/weather/analysis/eda.py
+      - src/weather/analysis/decomposition.py
+      - src/weather/utils/plotting.py
     outs:
       - reports/figures/eda:
           cache: false
@@ -68,15 +69,16 @@ stages:
           cache: false
 
   anomaly:
-    cmd: python -m weather.anomaly
+    cmd: python -m weather.analysis.anomaly
     deps:
       - .env
       - src/weather/utils/config.py
       - data/interim/clean.parquet
       - data/processed/global_series.parquet
       - reports/metrics/daily_batch_deviation.csv
-      - src/weather/anomaly.py
-      - src/weather/eda.py
+      - src/weather/analysis/anomaly.py
+      - src/weather/analysis/decomposition.py
+      - src/weather/utils/plotting.py
     outs:
       - reports/figures/anomaly:
           cache: false
@@ -91,16 +93,17 @@ stages:
           cache: false
 
   train:
-    cmd: python -m weather.train
+    cmd: python -m weather.modeling.train
     deps:
       - .env
       - src/weather/utils/config.py
       - data/processed/features.parquet
       - models/scaler.joblib
       - models/feature_columns.json
-      - src/weather/train.py
-      - src/weather/metrics.py
-      - src/weather/mlflow_utils.py
+      - src/weather/modeling/train.py
+      - src/weather/utils/metrics.py
+      - src/weather/utils/mlflow_utils.py
+      - src/weather/utils/plotting.py
     outs:
       - data/processed/predictions.parquet
       - models/ridge.joblib
@@ -112,13 +115,14 @@ stages:
           cache: false
 
   train_global:
-    cmd: python -m weather.train_global
+    cmd: python -m weather.modeling.train_global
     deps:
       - .env
       - src/weather/utils/config.py
       - data/processed/global_series.parquet
-      - src/weather/train_global.py
-      - src/weather/metrics.py
+      - src/weather/modeling/train_global.py
+      - src/weather/utils/metrics.py
+      - src/weather/utils/plotting.py
     outs:
       - reports/figures/forecast_global:
           cache: false
@@ -133,7 +137,7 @@ stages:
           cache: false
 
   ensemble:
-    cmd: python -m weather.ensemble
+    cmd: python -m weather.modeling.ensemble
     deps:
       - .env
       - src/weather/utils/config.py
@@ -143,8 +147,10 @@ stages:
       - models/random_forest.joblib
       - models/xgboost.joblib
       - models/lightgbm.joblib
-      - src/weather/ensemble.py
-      - src/weather/ensemble_model.py
+      - src/weather/modeling/ensemble.py
+      - src/weather/modeling/ensemble_model.py
+      - src/weather/utils/metrics.py
+      - src/weather/utils/plotting.py
     outs:
       - models/ensemble_config.json
       - reports/figures/forecast_panel:
@@ -160,7 +166,7 @@ stages:
           cache: false
 
   analyses:
-    cmd: python -m weather.analyses
+    cmd: python -m weather.insights.run
     deps:
       - .env
       - src/weather/utils/config.py
@@ -168,7 +174,8 @@ stages:
       - data/processed/features.parquet
       - models/lightgbm.joblib
       - models/feature_columns.json
-      - src/weather/analyses.py
+      - src/weather/insights
+      - src/weather/utils/plotting.py
     outs:
       - reports/figures/analyses:
           cache: false

@@ -1,14 +1,14 @@
 schema: '2.0'
 stages:
   download:
-    cmd: python -m weather.download
+    cmd: python -m weather.data.download
     deps:
     - path: .env
       hash: md5
       md5: cbdcf12ed57b4aac313095d8dcf466c9
       size: 3798
       isexec: true
-    - path: src/weather/download.py
+    - path: src/weather/data/download.py
       hash: md5
       md5: 1b9a029ef262285cf99d59ff5110b36e
       size: 1736
@@ -25,7 +25,7 @@ stages:
       size: 45066643
       isexec: true
   clean:
-    cmd: python -m weather.clean
+    cmd: python -m weather.data.clean
     deps:
     - path: .env
       hash: md5
@@ -37,7 +37,7 @@ stages:
       md5: 52b6f18bd2de5ed304112c839f6881f5
       size: 45066643
       isexec: true
-    - path: src/weather/clean.py
+    - path: src/weather/data/clean.py
       hash: md5
       md5: e0c5b5768d0dd5c59b93332b73fd3bf5
       size: 11144
@@ -64,7 +64,7 @@ stages:
       size: 21541
       isexec: true
   features:
-    cmd: python -m weather.features
+    cmd: python -m weather.data.features
     deps:
     - path: .env
       hash: md5
@@ -76,7 +76,7 @@ stages:
       md5: 10060130198d5219e33c2b09c6567db0
       size: 5563505
       isexec: true
-    - path: src/weather/features.py
+    - path: src/weather/data/features.py
       hash: md5
       md5: 188f34ca9a5a0e51a0c5ce79d55fb837
       size: 7794
@@ -118,7 +118,7 @@ stages:
       size: 444
       isexec: true
   eda:
-    cmd: python -m weather.eda
+    cmd: python -m weather.analysis.eda
     deps:
     - path: .env
       hash: md5
@@ -145,20 +145,25 @@ stages:
       md5: 7255556faba18320257baf2177c88924
       size: 1348
       isexec: true
-    - path: src/weather/eda.py
+    - path: src/weather/analysis/decomposition.py
       hash: md5
-      md5: da0c3836969e94002e38898694f13b7c
-      size: 14499
+      md5: 62f757cb4d06694929eb75f5c72992e8
+      size: 1924
       isexec: true
-    - path: src/weather/plotting.py
+    - path: src/weather/analysis/eda.py
       hash: md5
-      md5: 3eeb05b7e07c034d7d8c435ba9af4ec0
-      size: 2372
+      md5: 56a7b142868de7bf3d49d3dd08344931
+      size: 12834
       isexec: true
     - path: src/weather/utils/config.py
       hash: md5
       md5: 7197356d242ff7e9f7bdd30a56b2f56d
       size: 7447
+      isexec: true
+    - path: src/weather/utils/plotting.py
+      hash: md5
+      md5: 3eeb05b7e07c034d7d8c435ba9af4ec0
+      size: 2372
       isexec: true
     outs:
     - path: reports/figures/eda
@@ -182,7 +187,7 @@ stages:
       size: 1004
       isexec: true
   anomaly:
-    cmd: python -m weather.anomaly
+    cmd: python -m weather.analysis.anomaly
     deps:
     - path: .env
       hash: md5
@@ -204,20 +209,25 @@ stages:
       md5: 37c37e7f23f27fcf45a6c990c6d22219
       size: 21541
       isexec: true
-    - path: src/weather/anomaly.py
+    - path: src/weather/analysis/anomaly.py
       hash: md5
-      md5: 0632bde3827ad26d8786134d8cdbc7c0
-      size: 12770
+      md5: b130a3a378c33853e5f44da2ccbfb2a9
+      size: 12795
       isexec: true
-    - path: src/weather/eda.py
+    - path: src/weather/analysis/decomposition.py
       hash: md5
-      md5: da0c3836969e94002e38898694f13b7c
-      size: 14499
+      md5: 62f757cb4d06694929eb75f5c72992e8
+      size: 1924
       isexec: true
     - path: src/weather/utils/config.py
       hash: md5
       md5: 7197356d242ff7e9f7bdd30a56b2f56d
       size: 7447
+      isexec: true
+    - path: src/weather/utils/plotting.py
+      hash: md5
+      md5: 3eeb05b7e07c034d7d8c435ba9af4ec0
+      size: 2372
       isexec: true
     outs:
     - path: reports/figures/anomaly
@@ -246,7 +256,7 @@ stages:
       size: 867
       isexec: true
   train:
-    cmd: python -m weather.train
+    cmd: python -m weather.modeling.train
     deps:
     - path: .env
       hash: md5
@@ -268,36 +278,41 @@ stages:
       md5: 55543e2392e1d95c8be855f3d34fadad
       size: 2103
       isexec: true
-    - path: src/weather/metrics.py
+    - path: src/weather/modeling/train.py
       hash: md5
-      md5: e177e73412b3f15d01fc23516a193b74
-      size: 1018
-      isexec: true
-    - path: src/weather/mlflow_utils.py
-      hash: md5
-      md5: 616a745b15f7adacd9ca845127dc04ca
-      size: 1616
-      isexec: true
-    - path: src/weather/train.py
-      hash: md5
-      md5: 87d768c8d01e619ef15b806fe1ad4964
-      size: 6216
+      md5: 3be696c47a232f436fcffda54fc2a226
+      size: 6228
       isexec: true
     - path: src/weather/utils/config.py
       hash: md5
       md5: 7197356d242ff7e9f7bdd30a56b2f56d
       size: 7447
       isexec: true
+    - path: src/weather/utils/metrics.py
+      hash: md5
+      md5: e177e73412b3f15d01fc23516a193b74
+      size: 1018
+      isexec: true
+    - path: src/weather/utils/mlflow_utils.py
+      hash: md5
+      md5: 00931b79eb2f7fcd8872982769b21e90
+      size: 1622
+      isexec: true
+    - path: src/weather/utils/plotting.py
+      hash: md5
+      md5: 3eeb05b7e07c034d7d8c435ba9af4ec0
+      size: 2372
+      isexec: true
     outs:
     - path: data/processed/predictions.parquet
       hash: md5
-      md5: 831930a3cfa1d639c67f32713b44cf4d
+      md5: 7633fb17404a2339d453cf23b2bcc441
       size: 875636
       isexec: true
     - path: models/lightgbm.joblib
       hash: md5
-      md5: b3a1d8998a1beb3be188e481e58976d3
-      size: 4137889
+      md5: 9a87724a179878e1e59dada34221ff2b
+      size: 4137888
       isexec: true
     - path: models/random_forest.joblib
       hash: md5
@@ -316,11 +331,11 @@ stages:
       isexec: true
     - path: reports/metrics/train_panel.json
       hash: md5
-      md5: 0c93ab4e24fe1ca43d131ab72fffbb61
-      size: 2584
+      md5: d1fbc54306d3a6e92574e0f6282392da
+      size: 2583
       isexec: true
   train_global:
-    cmd: python -m weather.train_global
+    cmd: python -m weather.modeling.train_global
     deps:
     - path: .env
       hash: md5
@@ -332,20 +347,25 @@ stages:
       md5: 0294c4207abcb7c50088a346fac2f025
       size: 48707
       isexec: true
-    - path: src/weather/metrics.py
+    - path: src/weather/modeling/train_global.py
       hash: md5
-      md5: e177e73412b3f15d01fc23516a193b74
-      size: 1018
-      isexec: true
-    - path: src/weather/train_global.py
-      hash: md5
-      md5: fd6086dcb66a7da372cf8365c2b870cf
-      size: 9451
+      md5: a46afd6e73ad936602abc2660d1c9741
+      size: 9463
       isexec: true
     - path: src/weather/utils/config.py
       hash: md5
       md5: 7197356d242ff7e9f7bdd30a56b2f56d
       size: 7447
+      isexec: true
+    - path: src/weather/utils/metrics.py
+      hash: md5
+      md5: e177e73412b3f15d01fc23516a193b74
+      size: 1018
+      isexec: true
+    - path: src/weather/utils/plotting.py
+      hash: md5
+      md5: 3eeb05b7e07c034d7d8c435ba9af4ec0
+      size: 2372
       isexec: true
     outs:
     - path: reports/figures/forecast_global
@@ -374,7 +394,7 @@ stages:
       size: 536
       isexec: true
   ensemble:
-    cmd: python -m weather.ensemble
+    cmd: python -m weather.modeling.ensemble
     deps:
     - path: .env
       hash: md5
@@ -388,13 +408,13 @@ stages:
       isexec: true
     - path: data/processed/predictions.parquet
       hash: md5
-      md5: 831930a3cfa1d639c67f32713b44cf4d
+      md5: 7633fb17404a2339d453cf23b2bcc441
       size: 875636
       isexec: true
     - path: models/lightgbm.joblib
       hash: md5
-      md5: b3a1d8998a1beb3be188e481e58976d3
-      size: 4137889
+      md5: 9a87724a179878e1e59dada34221ff2b
+      size: 4137888
       isexec: true
     - path: models/random_forest.joblib
       hash: md5
@@ -411,12 +431,12 @@ stages:
       md5: 23e4c726c84f8e186264bb6cae3edac0
       size: 3491706
       isexec: true
-    - path: src/weather/ensemble.py
+    - path: src/weather/modeling/ensemble.py
       hash: md5
-      md5: 55852023eb5cf931845b5e7eadc25940
-      size: 10513
+      md5: d38cb1d7e93ee329510e50e7966cb5b6
+      size: 10534
       isexec: true
-    - path: src/weather/ensemble_model.py
+    - path: src/weather/modeling/ensemble_model.py
       hash: md5
       md5: a8233787a1d2fe58befd68c01d58b037
       size: 855
@@ -426,11 +446,21 @@ stages:
       md5: 7197356d242ff7e9f7bdd30a56b2f56d
       size: 7447
       isexec: true
+    - path: src/weather/utils/metrics.py
+      hash: md5
+      md5: e177e73412b3f15d01fc23516a193b74
+      size: 1018
+      isexec: true
+    - path: src/weather/utils/plotting.py
+      hash: md5
+      md5: 3eeb05b7e07c034d7d8c435ba9af4ec0
+      size: 2372
+      isexec: true
     outs:
     - path: models/ensemble_config.json
       hash: md5
-      md5: 4d25604cac780acf45e6267ec6c9e55c
-      size: 860
+      md5: 45ad87c6e926d343f8fc7b9226b13175
+      size: 859
       isexec: true
     - path: reports/figures/forecast_panel
       hash: md5
@@ -439,13 +469,13 @@ stages:
       nfiles: 4
     - path: reports/metrics/ensemble.json
       hash: md5
-      md5: 54b07ddbd1c3863924b7ef9dcb2de1d9
-      size: 2801
+      md5: 4efa767c667c44b43e0fa874909259f0
+      size: 2802
       isexec: true
     - path: reports/tables/model_comparison.csv
       hash: md5
-      md5: dbe9f842276ab340b1ad2285e7cfa091
-      size: 1230
+      md5: 5776dfa63c635be59f816ff7463d1db7
+      size: 1232
       isexec: true
     - path: reports/tables/model_comparison.tex
       hash: md5
@@ -454,11 +484,11 @@ stages:
       isexec: true
     - path: reports/tables/rmse_by_continent.csv
       hash: md5
-      md5: b02fe36b14a7f07f8df948a3fdadbc8a
+      md5: 966867969edb6824cce0ddd7b4597fc1
       size: 1104
       isexec: true
   analyses:
-    cmd: python -m weather.analyses
+    cmd: python -m weather.insights.run
     deps:
     - path: .env
       hash: md5
@@ -482,28 +512,33 @@ stages:
       isexec: true
     - path: models/lightgbm.joblib
       hash: md5
-      md5: b3a1d8998a1beb3be188e481e58976d3
-      size: 4137889
+      md5: 9a87724a179878e1e59dada34221ff2b
+      size: 4137888
       isexec: true
-    - path: src/weather/analyses.py
+    - path: src/weather/insights
       hash: md5
-      md5: 9f96c76468fe32b7903d403d39f07cab
-      size: 28842
-      isexec: true
+      md5: b53a796abaf16ab4b08934c95e35d885.dir
+      size: 81922
+      nfiles: 16
     - path: src/weather/utils/config.py
       hash: md5
       md5: 7197356d242ff7e9f7bdd30a56b2f56d
       size: 7447
       isexec: true
+    - path: src/weather/utils/plotting.py
+      hash: md5
+      md5: 3eeb05b7e07c034d7d8c435ba9af4ec0
+      size: 2372
+      isexec: true
     outs:
     - path: reports/figures/analyses
       hash: md5
-      md5: dfc810fcf03468354b5933c5f50a7438.dir
-      size: 2443659
+      md5: b2c99aabaec04731a303002647825571.dir
+      size: 2443294
       nfiles: 20
     - path: reports/maps
       hash: md5
-      md5: 348eeb45781703ab0babce0e3347c20d.dir
+      md5: cf17a2810b82a944159d1bafe9f2a8a1.dir
       size: 295282
       nfiles: 4
     - path: reports/metrics/analyses.json

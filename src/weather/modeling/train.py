@@ -20,9 +20,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
 
-from weather.metrics import regression_metrics
-from weather.mlflow_utils import log_figure, log_metrics_prefixed, residual_figure
 from weather.utils.config import ModelSettings, ensure_dirs, get_settings, setup_mlflow
+from weather.utils.metrics import regression_metrics
+from weather.utils.mlflow_utils import log_figure, log_metrics_prefixed, residual_figure
 
 S = get_settings()
 P = S.paths

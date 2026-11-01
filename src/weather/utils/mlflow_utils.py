@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from weather.plotting import INK_2, MUTED, SERIES, apply_style, save
+from weather.utils.plotting import INK_2, MUTED, SERIES, apply_style, save
 
 
 def log_metrics_prefixed(mlflow, metrics: dict, prefix: str) -> None:

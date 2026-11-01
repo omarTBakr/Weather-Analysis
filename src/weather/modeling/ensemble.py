@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from weather.metrics import regression_metrics
-from weather.plotting import CONTINENT_ORDER, INK_2, MUTED, SEQ_CMAP, SERIES, apply_style, save
 from weather.utils.config import ensure_dirs, get_settings, setup_mlflow
+from weather.utils.metrics import regression_metrics
+from weather.utils.plotting import CONTINENT_ORDER, INK_2, MUTED, SEQ_CMAP, SERIES, apply_style, save
 
 S = get_settings()
 P = S.paths
@@ -190,7 +190,7 @@ def main() -> None:
 
         from mlflow.models import infer_signature
 
-        from weather.ensemble_model import WeightedEnsemble
+        from weather.modeling.ensemble_model import WeightedEnsemble
 
         feat = pd.read_parquet(P.features_path, columns=feature_cols + ["split"])
         example = feat[feat["split"] == "test"][feature_cols].astype("float64").head(200)
