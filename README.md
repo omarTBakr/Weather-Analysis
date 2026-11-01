@@ -74,6 +74,16 @@ Stacking weights, learned on the validation window only: XGBoost 0.49, LightGBM 
 
 ---
 
+## Exploratory notebook
+[`EDA/eda.ipynb`](EDA/eda.ipynb) walks through the **raw** data before any cleaning, and is the reasoning behind each cleaning decision:
+- data types, sentinels and physically impossible values;
+- location coverage and translated country names;
+- the drift in snapshot hour, and the diurnal cycle it hides (snapshots at 14:00–15:00 read about +2 °C, at 07:00–09:00 about −2 °C);
+- temperature, precipitation and other weather distributions, correlations and air quality;
+- the corrupted 17 Aug 2026 batch, and a world map.
+
+It ends with a table mapping each finding to its pipeline step. To open it, run `uv run jupyter lab EDA/eda.ipynb` (after `uv run dvc pull`).
+
 ## Methodology
 
 ### 1. Data cleaning & preprocessing — `src/weather/data/clean.py`, `data/features.py`
@@ -188,6 +198,7 @@ Interactive maps (open locally): [`reports/maps/capitals_weather_map.html`](repo
 │       ├── climate.py, air_quality.py, feature_importance.py, spatial.py, geographic.py
 │       └── run.py           # runs every analysis, writes reports/metrics/analyses.json, logs to MLflow
 ├── tests/                   # pytest: cleaning rules, leakage-free features/split, metrics
+├── EDA/eda.ipynb            # step-by-step exploratory notebook on the raw data (executed, outputs saved)
 ├── reports/
 │   ├── figures/             # all figures (committed; DVC outputs with cache: false)
 │   ├── tables/              # CSV + auto-generated LaTeX tables
