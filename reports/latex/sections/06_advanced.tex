@@ -10,18 +10,18 @@ Seasonality is structured by latitude. The two hemispheres run in opposite phase
 (Figure~\ref{fig:latband}), and the annual range grows strongly with $|$latitude$|$ ($r=0.84$). Continental
 capitals such as Ulaanbaatar, Astana and Bishkek have the widest swings (30--42\,\textdegree C) (Figure~\ref{fig:amp}).
 
-\begin{figure}[H]\centering
-\includegraphics[width=0.85\linewidth]{analyses/climate_trend_by_continent}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.83\textwidth]{analyses/climate_trend_by_continent}
 \caption{Per-city temperature trends by continent, naive and observation-hour adjusted.}\label{fig:climtrend}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.9\linewidth]{analyses/climate_latitude_band_seasonality}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.87\textwidth]{analyses/climate_latitude_band_seasonality}
 \caption{Mean temperature by latitude band and calendar month.}\label{fig:latband}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.75\linewidth]{analyses/climate_amplitude_vs_latitude}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.78\textwidth]{analyses/climate_amplitude_vs_latitude}
 \caption{Annual temperature range against $|$latitude$|$.}\label{fig:amp}
-\end{figure}
+\end{figure*}
 
 \subsection{Environmental impact: air quality and weather}
 Pooled correlations mix geography with weather: humid tropical capitals are cleaner than dry, dense ones.
@@ -40,23 +40,26 @@ its permutation importance, calendar month barely matters, and UV, temperature a
 drivers (Figure~\ref{fig:pmdrivers}). The median
 PM2.5 of 41\,\% of capitals exceeds the WHO 24-hour guideline of 15\,µg/m³. Asia carries the heaviest burden.
 
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{analyses/airquality_weather_correlation}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.99\textwidth]{analyses/airquality_weather_correlation}
 \caption{Air pollutants against weather: pooled (left) and within-city (right) Spearman correlations.}\label{fig:aqcorr}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{analyses/airquality_response_curves}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=1.0\textwidth]{analyses/airquality_response_curves}
 \caption{Pollutant response within weather bins (median and IQR).}
-\end{figure}
-\begin{figure}[H]\centering
-\begin{subfigure}{0.49\linewidth}\includegraphics[width=\linewidth]{analyses/airquality_pm25_drivers}\caption{Drivers of PM2.5}\label{fig:pmdrivers}\end{subfigure}
-\begin{subfigure}{0.49\linewidth}\includegraphics[width=\linewidth]{analyses/airquality_top_pm25}\caption{Most polluted capitals}\end{subfigure}
-\caption{Air-quality drivers and hotspots.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.9\linewidth]{analyses/airquality_epa_by_continent}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.78\textwidth]{analyses/airquality_pm25_drivers}
+\caption{Air-quality drivers and hotspots. --- Drivers of PM2.5.}\label{fig:pmdrivers}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.72\textwidth]{analyses/airquality_top_pm25}
+\caption{Air-quality drivers and hotspots. --- Most polluted capitals.}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.93\textwidth]{analyses/airquality_epa_by_continent}
 \caption{US-EPA air-quality index categories by continent.}
-\end{figure}
+\end{figure*}
 
 \subsection{Feature importance}
 Feature importance for the LightGBM next-day model is assessed four ways: split \textbf{gain},
@@ -68,16 +71,19 @@ features, such as raw lags, that the trees do not need. Past the persistence blo
 humidity, pressure and its daily change, latitude, UV, and the diurnal snapshot-hour terms
 (Figure~\ref{fig:fi2}).
 
-\tbl{feature_importance.tex}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{analyses/feature_importance_comparison}
+\widetbl{feature_importance.tex}
+\begin{figure*}[tp]\centering
+\includegraphics[width=1.0\textwidth]{analyses/feature_importance_comparison}
 \caption{Top-15 features under four importance techniques, each scaled to its maximum.}
-\end{figure}
-\begin{figure}[H]\centering
-\begin{subfigure}{0.49\linewidth}\includegraphics[width=\linewidth]{analyses/feature_importance_secondary}\caption{Secondary drivers}\label{fig:fi2}\end{subfigure}
-\begin{subfigure}{0.49\linewidth}\includegraphics[width=\linewidth]{analyses/feature_importance_shap_summary}\caption{SHAP summary}\end{subfigure}
-\caption{Feature importance beyond persistence, and a SHAP beeswarm.}
-\end{figure}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.76\textwidth]{analyses/feature_importance_secondary}
+\caption{Feature importance beyond persistence, and a SHAP beeswarm. --- Secondary drivers.}\label{fig:fi2}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.81\textwidth]{analyses/feature_importance_shap_summary}
+\caption{Feature importance beyond persistence, and a SHAP beeswarm. --- SHAP summary.}
+\end{figure*}
 
 \subsection{Spatial analysis}
 Every variable is clustered in space. Moran's $I$ with 8-nearest-neighbour great-circle weights and 999
@@ -87,31 +93,31 @@ depends on local emissions. Temperature declines away from the equator, faster i
 where most high-latitude capitals lie (Figure~\ref{fig:latprof}). Interactive maps are produced in
 \texttt{reports/maps/}: a Folium map of all capitals with pop-ups, and Plotly maps.
 
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{analyses/spatial_maps}
+\begin{figure*}[tp]\centering
+\includegraphics[width=1.0\textwidth]{analyses/spatial_maps}
 \caption{Spatial distribution of climate and air quality, with Moran's $I$.}\label{fig:spatial}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.85\linewidth]{analyses/geo_map_temperature}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=1.0\textwidth]{analyses/geo_map_temperature}
 \caption{Mean temperature of the 197 capitals (natural-earth projection).}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.85\linewidth]{analyses/spatial_latitude_profile}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=0.83\textwidth]{analyses/spatial_latitude_profile}
 \caption{Latitude profile of mean temperature with a LOWESS fit.}\label{fig:latprof}
-\end{figure}
+\end{figure*}
 
 \subsection{Geographical patterns}
-\tbl{continent_summary.tex}
+\widetbl{continent_summary.tex}
 Doha is the hottest capital in the sample (32.9\,\textdegree C mean) and Ulaanbaatar the coldest
 (6.1\,\textdegree C). Asia has both the widest temperature spread and the highest median PM2.5. Europe is
 cool and humid with clean air, while Africa and Oceania are warm with narrow ranges
 (Figure~\ref{fig:geobox}). Per-country summaries are in \texttt{reports/tables/country\_summary.csv}.
 
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{analyses/geo_continent_boxplots}
+\begin{figure*}[tp]\centering
+\includegraphics[width=1.0\textwidth]{analyses/geo_continent_boxplots}
 \caption{Weather and air quality by continent.}\label{fig:geobox}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{analyses/geo_hottest_coldest}
+\end{figure*}
+\begin{figure*}[tp]\centering
+\includegraphics[width=1.0\textwidth]{analyses/geo_hottest_coldest}
 \caption{The hottest and coldest capitals by mean temperature.}
-\end{figure}
+\end{figure*}
