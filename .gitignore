@@ -1,0 +1,26 @@
+# Python / env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Data & models are versioned by DVC, not git
+/data/
+/models/
+
+# MLflow local tracking store & artifacts
+mlflow.db
+mlartifacts/
+mlruns/
+
+# LaTeX build products
+reports/latex/*.aux
+reports/latex/*.log
+reports/latex/*.out
+reports/latex/*.toc
+reports/latex/*.fls
+reports/latex/*.fdb_latexmk
+reports/latex/*.synctex.gz
+reports/latex/*.lof
+reports/latex/*.lot

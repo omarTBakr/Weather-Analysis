@@ -1,0 +1,62 @@
+{
+  "raw_rows": 170928,
+  "raw_locations": 268,
+  "raw_countries": 211,
+  "raw_missing_cells": 0,
+  "exact_duplicates_removed": 0,
+  "locations_dropped_low_coverage": 71,
+  "rows_dropped_low_coverage": 3790,
+  "unknown_continent_countries": [],
+  "same_day_duplicates_removed": 385,
+  "invalid_set_to_nan": {
+    "temperature_celsius": 1,
+    "feels_like_celsius": 1,
+    "wind_kph": 3,
+    "gust_kph": 1,
+    "pressure_mb": 14,
+    "precip_mm": 0,
+    "humidity": 0,
+    "cloud": 0,
+    "visibility_km": 0,
+    "uv_index": 0,
+    "aq_co": 1,
+    "aq_o3": 0,
+    "aq_no2": 0,
+    "aq_so2": 1,
+    "aq_pm25": 0,
+    "aq_pm10": 3
+  },
+  "corrupted_days": {
+    "2026-08-17": 8.5
+  },
+  "corrupted_rows_nulled": 186,
+  "outliers_capped": {
+    "temperature_celsius": 144,
+    "feels_like_celsius": 423,
+    "wind_kph": 690,
+    "gust_kph": 719,
+    "pressure_mb": 81,
+    "precip_mm": 167,
+    "aq_co": 167,
+    "aq_o3": 166,
+    "aq_no2": 166,
+    "aq_so2": 167,
+    "aq_pm25": 167,
+    "aq_pm10": 167
+  },
+  "missing_before_impute": 1885,
+  "missing_after_impute": 0,
+  "clean_rows": 166753,
+  "clean_locations": 197,
+  "clean_countries": 186,
+  "date_min": "2024-05-16",
+  "date_max": "2026-10-13",
+  "continent_counts": {
+    "Africa": 52,
+    "Asia": 51,
+    "Europe": 46,
+    "North America": 23,
+    "Oceania": 13,
+    "South America": 12
+  }
+}

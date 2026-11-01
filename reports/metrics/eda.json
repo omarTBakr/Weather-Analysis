@@ -1,0 +1,12 @@
+{
+  "trend_raw_c_per_year": -1.8000123202472869,
+  "trend_adjusted_c_per_year": -0.2587491027755818,
+  "annual_amplitude_c": 9.460293638792233,
+  "decomposition_resid_std_c": 0.47673528513903407,
+  "median_local_hour_first_month": 16.5,
+  "median_local_hour_last_month": 7.75,
+  "dry_observation_share_pct": 67.26588106526123,
+  "mean_precip_mm": 0.12581789719765185,
+  "corr_temp_humidity": -0.3245400799986735,
+  "corr_temp_uv": 0.43920066742294683
+}

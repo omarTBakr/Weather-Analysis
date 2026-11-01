@@ -1,0 +1,12 @@
+{
+  "iso_flagged": 1668,
+  "iso_rate_pct": 1.0002818539996283,
+  "lof_rate_pct": 1.0,
+  "temporal_flagged": 4279,
+  "temporal_rate_pct": 2.5660707753383747,
+  "iso_lof_jaccard": 0.11299435028248588,
+  "iso_temporal_overlap_pct": 17.685851318944845,
+  "iso_vs_clean_outlier_overlap_pct": 19.244604316546763,
+  "global_anomaly_days": 3,
+  "most_flagged_location": "Bridgetown"
+}

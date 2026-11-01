@@ -1,0 +1,24 @@
+{
+  "daily_rows": 168109,
+  "feature_rows": 165107,
+  "n_features": 34,
+  "global_series_days": 881,
+  "global_series_locations": 184,
+  "split": {
+    "train": {
+      "rows": 142674,
+      "start": "2024-05-31",
+      "end": "2026-06-15"
+    },
+    "val": {
+      "rows": 11220,
+      "start": "2026-06-16",
+      "end": "2026-08-14"
+    },
+    "test": {
+      "rows": 11213,
+      "start": "2026-08-15",
+      "end": "2026-10-13"
+    }
+  }
+}
