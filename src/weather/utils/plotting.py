@@ -36,7 +36,7 @@ def apply_style() -> None:
             "axes.facecolor": SURFACE,
             "savefig.facecolor": SURFACE,
             "figure.dpi": 110,
-            "savefig.dpi": 300,  # PNG (README) resolution; LaTeX uses the vector PDF
+            "savefig.dpi": 600,  # high-res rasters: figures sit in one 2-column slot, readers zoom in
             "pdf.fonttype": 42,  # embed TrueType so text stays selectable/searchable in the PDF
             "font.family": "sans-serif",
             "font.size": 9.5,
@@ -105,7 +105,7 @@ def _place_legend_below(fig) -> None:
 
 
 def save(fig, path: Path, tight: bool = True) -> Path:
-    """Write the figure as a 300-dpi PNG (README / MLflow) and a vector PDF with the same stem (LaTeX report).
+    """Write the figure as a 600-dpi PNG (README / MLflow) and a vector PDF with the same stem (LaTeX report).
 
     `\\includegraphics{name}` without an extension makes pdflatex pick the PDF.
     """

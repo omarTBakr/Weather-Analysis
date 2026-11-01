@@ -29,7 +29,7 @@ Three ensembles are built from validation-window predictions only:
 The stacked ensemble is logged as an MLflow \texttt{pyfunc} model (\texttt{weather-temp-ensemble}). The
 pipeline checks that the served model reproduces the offline predictions.
 
-\widetbl{model_comparison.tex}
+\tbl{model_comparison.tex}
 
 All learned models beat persistence. The ensembles beat every single model, and stacking is best:
 test RMSE 1.838\,\textdegree C, MAE 1.21\,\textdegree C, $R^2=0.929$, 81\,\% of forecasts within 2\,\textdegree C,
@@ -38,22 +38,22 @@ are the least correlated with the tree models'. The gains look modest because da
 daily snapshot is noisy; the hardest regions are mid-latitude Europe and Asia, where synoptic systems pass
 through (Figure~\ref{fig:rmsecont}).
 
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.89\textwidth]{forecast_panel/model_comparison_rmse}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{forecast_panel/model_comparison_rmse}
 \caption{Test RMSE of single models (blue) and ensembles (orange).}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.86\textwidth]{forecast_panel/rmse_by_continent}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{forecast_panel/rmse_by_continent}
 \caption{Test RMSE by continent.}\label{fig:rmsecont}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.94\textwidth]{forecast_panel/city_forecasts}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{forecast_panel/city_forecasts}
 \caption{Stacked-ensemble next-day forecasts against observations for four example capitals.}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.93\textwidth]{forecast_panel/daily_error_test}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{forecast_panel/daily_error_test}
 \caption{Cross-city RMSE per day over the test window.}
-\end{figure*}
+\end{figure}
 
 \subsection{Global mean series: multi-step trend forecasting}
 Each model is fitted on everything before the test window and forecasts all 60 test days in one shot:
@@ -74,11 +74,11 @@ SARIMAX error from 0.62 to 0.37\,\textdegree C, which confirms that the confound
 as well as for trend estimation. Refitted on all data, the best interval-producing model projects the next
 90 days with a 95\,\% prediction interval (Figure~\ref{fig:future}).
 
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.94\textwidth]{forecast_global/global_multistep_forecast}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{forecast_global/global_multistep_forecast}
 \caption{60-day multi-step forecasts of the global mean temperature.}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.94\textwidth]{forecast_global/global_future_forecast}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{forecast_global/global_future_forecast}
 \caption{Projected global mean temperature for the next 90 days.}\label{fig:future}
-\end{figure*}
+\end{figure}

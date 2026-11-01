@@ -18,28 +18,28 @@ Isolation Forest anomalies are driven mainly by extreme precipitation, low visib
 neighbourhoods. About 18\,\% of Isolation Forest anomalies are also temporal anomalies, and about 19\,\% contain
 a value capped during cleaning. The multivariate view therefore adds information beyond univariate fences.
 
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.94\textwidth]{anomaly/batch_corruption_detector}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{anomaly/batch_corruption_detector}
 \caption{Batch-level detector: the 17~Aug~2026 snapshot is corrupted and was nulled and imputed during cleaning.}\label{fig:batch}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.72\textwidth]{anomaly/anomaly_drivers}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{anomaly/anomaly_drivers}
 \caption{What makes an observation anomalous, and where anomalies sit in the locally standardised weather space. --- Drivers.}\label{fig:anomdrivers}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.67\textwidth]{anomaly/anomaly_pca}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{anomaly/anomaly_pca}
 \caption{What makes an observation anomalous, and where anomalies sit in the locally standardised weather space. --- PCA projection.}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.83\textwidth]{anomaly/anomaly_rate_by_continent}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{anomaly/anomaly_rate_by_continent}
 \caption{Anomaly rate by continent and detector.}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.94\textwidth]{anomaly/city_temporal_anomalies}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{anomaly/city_temporal_anomalies}
 \caption{Temporal anomalies for the most-flagged capital.}
-\end{figure*}
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.94\textwidth]{anomaly/global_anomalies}
+\end{figure}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{anomaly/global_anomalies}
 \caption{Remaining global-scale anomalies after cleaning ($|z|>3$ on the residual of the harmonic model).}
-\end{figure*}
-\widetbl{top_anomalies.tex}
+\end{figure}
+\tbl{top_anomalies.tex}

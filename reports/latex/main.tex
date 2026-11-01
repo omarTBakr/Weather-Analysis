@@ -26,20 +26,16 @@
 % auto-generated pandas tables: centred, small, never wider than their column / page
 \usepackage{etoolbox}
 \AtBeginEnvironment{table}{\centering\small}
-\AtBeginEnvironment{table*}{\centering\small}
 \BeforeBeginEnvironment{tabular}{\begin{adjustbox}{max width=\linewidth}}
 \AfterEndEnvironment{tabular}{\end{adjustbox}}
 \newcommand{\tbl}[1]{\input{../tables/#1}}
-% wide tables: temporarily turn the generated `table` float into a full-width `table*`
-\newcommand{\widetbl}[1]{\begingroup
-  \renewenvironment{table}[1][]{\begin{table*}[tp]}{\end{table*}}%
-  \input{../tables/#1}\endgroup}
 
-% many full-width figures: let LaTeX stack them and keep more floats in flight
+% two-column throughout: every figure is one column wide (vector PDF / 600-dpi rasters, zoom for detail)
 \usepackage{morefloats}
-\setcounter{dbltopnumber}{2}
-\renewcommand{\dbltopfraction}{0.9}
-\renewcommand{\dblfloatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{totalnumber}{5}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\floatpagefraction}{0.7}
 \renewcommand{\textfraction}{0.08}
 
 %----------------------------------------------------------

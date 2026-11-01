@@ -37,10 +37,10 @@ value comes from the checks above.
 persisted (\nolinkurl{models/scaler.joblib}). It is applied inside the linear model's pipeline. Anomaly
 detection uses a \emph{city-local} standardisation instead (Section~\ref{sec:anomaly}).
 
-\begin{figure*}[tp]\centering
-\includegraphics[width=0.77\textwidth]{eda/cleaning_corrections}
+\begin{figure}[tp]\centering
+\includegraphics[width=\columnwidth]{eda/cleaning_corrections}
 \caption{Rows corrected per variable: physically invalid values (imputed) and outliers (capped).}
-\end{figure*}
+\end{figure}
 
 \paragraph{Feature engineering.} The cleaned data is put on a regular daily grid per city. Features use only
 information available at day $t$:

@@ -137,7 +137,7 @@ def spatial_analysis(daily: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         figp.update_traces(marker={"size": 9, "line": {"width": 0.5, "color": "#52514e"}})
         figp.write_html(P.maps / f"map_{v}.html", include_plotlyjs="cdn")
         try:
-            figp.write_image(OUT / f"geo_map_{v}.png", width=1100, height=560, scale=2.5)
+            figp.write_image(OUT / f"geo_map_{v}.png", width=1100, height=560, scale=5)
             figp.write_image(OUT / f"geo_map_{v}.pdf", width=1100, height=560)
         except Exception as exc:  # noqa: BLE001 - static export needs Chrome via kaleido; HTML still produced
             print(f"plotly static export skipped ({exc})")
