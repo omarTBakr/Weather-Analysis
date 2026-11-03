@@ -7,6 +7,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
 def regression_metrics(y_true, y_pred) -> dict[str, float]:
+    """MAE, RMSE, MAPE (only on |y| >= 1), sMAPE, R² and the share of forecasts within 2 °C (in %)."""
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
     denom = np.abs(y_true) + np.abs(y_pred)

@@ -34,66 +34,83 @@ class PathSettings(BaseModel):
     reports_dir: Path = Path("reports")
 
     def _abs(self, p: Path) -> Path:
+        """Resolve `p` against `root` unless it is already absolute."""
         return p if p.is_absolute() else self.root / p
 
     @property
     def data_raw(self) -> Path:
+        """Downloaded Kaggle CSV."""
         return self._abs(self.data_dir) / "raw"
 
     @property
     def data_interim(self) -> Path:
+        """Cleaned observations."""
         return self._abs(self.data_dir) / "interim"
 
     @property
     def data_processed(self) -> Path:
+        """Daily panel, features, global series, predictions."""
         return self._abs(self.data_dir) / "processed"
 
     @property
     def models(self) -> Path:
+        """Fitted models, scaler and feature column list."""
         return self._abs(self.models_dir)
 
     @property
     def reports(self) -> Path:
+        """Root of all report outputs."""
         return self._abs(self.reports_dir)
 
     @property
     def figures(self) -> Path:
+        """Figures (PNG + PDF)."""
         return self.reports / "figures"
 
     @property
     def tables(self) -> Path:
+        """CSV and LaTeX tables."""
         return self.reports / "tables"
 
     @property
     def metrics(self) -> Path:
+        """Per-stage JSON metrics (`dvc metrics show`)."""
         return self.reports / "metrics"
 
     @property
     def maps(self) -> Path:
+        """Interactive HTML maps."""
         return self.reports / "maps"
 
     @property
     def clean_path(self) -> Path:
+        """Output of the `clean` stage."""
         return self.data_interim / "clean.parquet"
 
     @property
     def daily_path(self) -> Path:
+        """Daily panel (one row per city-day)."""
         return self.data_processed / "daily.parquet"
 
     @property
     def features_path(self) -> Path:
+        """Supervised feature table with the `split` column."""
         return self.data_processed / "features.parquet"
 
     @property
     def global_series_path(self) -> Path:
+        """Global mean temperature series."""
         return self.data_processed / "global_series.parquet"
 
     @property
     def predictions_path(self) -> Path:
+        """Val/test predictions of every panel model."""
         return self.data_processed / "predictions.parquet"
 
 
 class MLflowSettings(BaseModel):
+    """MLflow tracking store, experiment and model-registry naming."""
+
     tracking_uri: str = ""  # empty -> sqlite:///<root>/mlflow.db
     experiment_name: str = "weather-forecasting"
     artifacts_dir: Path = Path("mlartifacts")
@@ -101,11 +118,15 @@ class MLflowSettings(BaseModel):
 
 
 class DataSettings(BaseModel):
+    """Kaggle dataset coordinates."""
+
     kaggle_dataset: str = "nelgiriyewithana/global-weather-repository"
     kaggle_file: str = "GlobalWeatherRepository.csv"
 
 
 class CleanSettings(BaseModel):
+    """Thresholds of the `clean` stage."""
+
     min_obs_per_location: int = Field(365, ge=1)
     iqr_k: float = Field(3.0, gt=0)
     heavy_tail_quantile: float = Field(0.999, gt=0.5, le=1.0)
@@ -114,6 +135,8 @@ class CleanSettings(BaseModel):
 
 
 class FeatureSettings(BaseModel):
+    """Target, forecast horizon and feature recipe of the panel models."""
+
     target: str = "temperature_celsius"
     horizon: int = Field(1, ge=1)
     lags: list[int] = [1, 2, 3, 7, 14]
@@ -125,17 +148,23 @@ class FeatureSettings(BaseModel):
 
 
 class SplitSettings(BaseModel):
+    """Sizes (in days) of the chronological validation and test windows."""
+
     test_days: int = Field(60, ge=1)
     val_days: int = Field(60, ge=1)
 
 
 class GlobalSeriesSettings(BaseModel):
+    """Global mean series: location coverage filter, Fourier order, projection length."""
+
     min_coverage: float = Field(0.95, gt=0, le=1)
     fourier_order: int = Field(4, ge=1)
     future_days: int = Field(90, ge=1)
 
 
 class AnomalySettings(BaseModel):
+    """Anomaly-detection parameters."""
+
     contamination: float = Field(0.01, gt=0, lt=0.5)
     lof_neighbors: int = Field(35, ge=2)
     z_thresh: float = 3.5
@@ -144,10 +173,14 @@ class AnomalySettings(BaseModel):
 
 
 class RidgeParams(BaseModel):
+    """Ridge regression hyperparameters."""
+
     alpha: float = 1.0
 
 
 class RandomForestParams(BaseModel):
+    """Random forest hyperparameters."""
+
     n_estimators: int = 200
     max_depth: int | None = 16
     min_samples_leaf: int = 5
@@ -155,6 +188,8 @@ class RandomForestParams(BaseModel):
 
 
 class XGBoostParams(BaseModel):
+    """XGBoost hyperparameters (early stopping on the validation window)."""
+
     n_estimators: int = 2000
     learning_rate: float = 0.05
     max_depth: int = 7
@@ -164,6 +199,8 @@ class XGBoostParams(BaseModel):
 
 
 class LightGBMParams(BaseModel):
+    """LightGBM hyperparameters (early stopping on the validation window)."""
+
     n_estimators: int = 3000
     learning_rate: float = 0.03
     num_leaves: int = 63
@@ -174,6 +211,8 @@ class LightGBMParams(BaseModel):
 
 
 class ModelSettings(BaseModel):
+    """Hyperparameters of every panel model, one section per model name."""
+
     ridge: RidgeParams = RidgeParams()
     random_forest: RandomForestParams = RandomForestParams()
     xgboost: XGBoostParams = XGBoostParams()
@@ -181,8 +220,11 @@ class ModelSettings(BaseModel):
 
 
 class AnalysesSettings(BaseModel):
+    """Sample sizes for the costlier feature-importance methods."""
+
     shap_sample: int = Field(3000, ge=100)
     permutation_sample: int = Field(20000, ge=100)
+    mutual_info_sample: int = Field(30000, ge=100)  # training rows (must not exceed the training window)
 
 
 class Settings(BaseSettings):
@@ -211,14 +253,17 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def raw_csv(self) -> Path:
+        """Path of the downloaded raw CSV."""
         return self.paths.data_raw / self.data.kaggle_file
 
     @property
     def mlflow_tracking_uri(self) -> str:
+        """Configured tracking URI, or a SQLite store at the project root."""
         return self.mlflow.tracking_uri or f"sqlite:///{self.paths.root / 'mlflow.db'}"
 
     @property
     def mlflow_artifact_location(self) -> str:
+        """`file://` URI of the MLflow artifact directory."""
         p = self.mlflow.artifacts_dir
         return (p if p.is_absolute() else self.paths.root / p).as_uri()
 
@@ -233,17 +278,21 @@ def get_settings() -> Settings:
     return Settings()
 
 
-def ensure_dirs() -> None:
-    p = get_settings().paths
+def ensure_dirs(settings: Settings | None = None) -> None:
+    """Create every data / model / report output directory of `settings` (default: `get_settings()`) if missing."""
+    p = (settings or get_settings()).paths
     for d in (p.data_raw, p.data_interim, p.data_processed, p.models, p.figures, p.tables, p.metrics, p.maps):
         d.mkdir(parents=True, exist_ok=True)
 
 
-def setup_mlflow():
-    """Point MLflow at the configured tracking store and experiment; returns the `mlflow` module."""
+def setup_mlflow(settings: Settings | None = None):
+    """Point MLflow at the tracking store and experiment of `settings` (default: `get_settings()`).
+
+    Returns the `mlflow` module.
+    """
     import mlflow
 
-    s = get_settings()
+    s = settings or get_settings()
     mlflow.set_tracking_uri(s.mlflow_tracking_uri)
     if mlflow.get_experiment_by_name(s.mlflow.experiment_name) is None:
         mlflow.create_experiment(s.mlflow.experiment_name, artifact_location=s.mlflow_artifact_location)

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+
+from weather.enums import GlobalSeriesColumns
+from weather.feature_engineering.global_series import seasonal_design_matrix
 
 
 def harmonic_decomposition(gs: pd.DataFrame, order: int = 3) -> pd.DataFrame:
@@ -13,23 +15,19 @@ def harmonic_decomposition(gs: pd.DataFrame, order: int = 3) -> pd.DataFrame:
     Returns observed / fitted / trend / seasonal / residual; `attrs` hold naive vs hour-adjusted slopes (degC/yr).
     """
     g = gs.set_index("date").interpolate()
-    t = (g.index - g.index[0]).days.to_numpy() / 365.25
-    X = pd.DataFrame({"t": t}, index=g.index)
-    doy = g.index.day_of_year.to_numpy()
-    for k in range(1, order + 1):
-        X[f"s{k}"] = np.sin(2 * np.pi * k * doy / 365.25)
-        X[f"c{k}"] = np.cos(2 * np.pi * k * doy / 365.25)
+    X = seasonal_design_matrix(g.index, g.index[0], order)
+    t = X["t"].to_numpy()
     seas_cols = [c for c in X if c != "t"]
     y = g["temperature_celsius"]
     raw = sm.OLS(y, sm.add_constant(X)).fit()
-    Xa = X.assign(hour_sin=g["hour_sin"], hour_cos=g["hour_cos"])
+    hour_cols = GlobalSeriesColumns.HOUR
+    Xa = X.join(g[hour_cols])
     adj = sm.OLS(y, sm.add_constant(Xa)).fit(cov_type="HAC", cov_kwds={"maxlags": 14})
     out = pd.DataFrame(index=g.index)
     out["observed"] = y
     out["fitted"] = adj.fittedvalues
     out["seasonal"] = X[seas_cols] @ adj.params[seas_cols]
     # trend lines drawn at the series level: intercept + slope*t + mean of the other fitted components
-    hour_cols = ["hour_sin", "hour_cos"]
     out["trend_adj"] = (
         adj.params["const"]
         + adj.params["t"] * t

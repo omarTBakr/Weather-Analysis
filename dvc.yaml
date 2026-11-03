@@ -9,6 +9,7 @@ stages:
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - src/weather/data/download.py
     outs:
       - data/raw/GlobalWeatherRepository.csv
@@ -18,8 +19,10 @@ stages:
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - data/raw/GlobalWeatherRepository.csv
       - src/weather/data/clean.py
+      - src/weather/utils/timeseries.py
     outs:
       - data/interim/clean.parquet
       - reports/metrics/daily_batch_deviation.csv:
@@ -29,12 +32,13 @@ stages:
           cache: false
 
   features:
-    cmd: python -m weather.data.features
+    cmd: python -m weather.feature_engineering.run
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - data/interim/clean.parquet
-      - src/weather/data/features.py
+      - src/weather/feature_engineering
     outs:
       - data/processed/daily.parquet
       - data/processed/features.parquet
@@ -50,13 +54,17 @@ stages:
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - data/interim/clean.parquet
       - data/processed/daily.parquet
       - data/processed/global_series.parquet
       - reports/metrics/clean_report.json
       - src/weather/analysis/eda.py
       - src/weather/analysis/decomposition.py
+      - src/weather/feature_engineering/global_series.py
+      - src/weather/feature_engineering/encoding.py
       - src/weather/utils/plotting.py
+      - src/weather/utils/timeseries.py
     outs:
       - reports/figures/eda:
           cache: false
@@ -73,12 +81,16 @@ stages:
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - data/interim/clean.parquet
       - data/processed/global_series.parquet
       - reports/metrics/daily_batch_deviation.csv
       - src/weather/analysis/anomaly.py
       - src/weather/analysis/decomposition.py
+      - src/weather/feature_engineering/global_series.py
+      - src/weather/feature_engineering/encoding.py
       - src/weather/utils/plotting.py
+      - src/weather/utils/timeseries.py
     outs:
       - reports/figures/anomaly:
           cache: false
@@ -97,10 +109,12 @@ stages:
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - data/processed/features.parquet
       - models/scaler.joblib
       - models/feature_columns.json
       - src/weather/modeling/train.py
+      - src/weather/modeling/baselines.py
       - src/weather/utils/metrics.py
       - src/weather/utils/mlflow_utils.py
       - src/weather/utils/plotting.py
@@ -119,8 +133,12 @@ stages:
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - data/processed/global_series.parquet
       - src/weather/modeling/train_global.py
+      - src/weather/modeling/global_forecasters.py
+      - src/weather/feature_engineering/global_series.py
+      - src/weather/feature_engineering/encoding.py
       - src/weather/utils/metrics.py
       - src/weather/utils/plotting.py
     outs:
@@ -141,6 +159,7 @@ stages:
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - data/processed/predictions.parquet
       - data/processed/features.parquet
       - models/ridge.joblib
@@ -148,8 +167,10 @@ stages:
       - models/xgboost.joblib
       - models/lightgbm.joblib
       - src/weather/modeling/ensemble.py
+      - src/weather/modeling/combiners.py
       - src/weather/modeling/ensemble_model.py
       - src/weather/utils/metrics.py
+      - src/weather/utils/mlflow_utils.py
       - src/weather/utils/plotting.py
     outs:
       - models/ensemble_config.json
@@ -170,6 +191,7 @@ stages:
     deps:
       - .env
       - src/weather/utils/config.py
+      - src/weather/enums
       - data/processed/daily.parquet
       - data/processed/features.parquet
       - models/lightgbm.joblib

@@ -86,7 +86,7 @@ It ends with a table mapping each finding to its pipeline step. To open it, run 
 
 ## Methodology
 
-### 1. Data cleaning & preprocessing — `src/weather/data/clean.py`, `data/features.py`
+### 1. Data cleaning & preprocessing — `src/weather/data/clean.py`, `feature_engineering/`
 - **Schema.** Drop the 7 redundant imperial columns, parse `last_updated`, and keep the snapshot's **local hour** as a covariate.
 - **Coverage.** Drop 71 one-off or mis-named locations with fewer than 365 days of data. Map translated country names (*Polônia*, Cyrillic, Chinese) back to each location's canonical name. Add continents via `pycountry-convert` plus overrides. Collapse 385 same-day duplicates.
 - **Validity.** Values outside physical ranges become NaN (pressure 3,006 mb, wind 2,963 kph, sentinel −9999).
@@ -179,24 +179,43 @@ Interactive maps (open locally): [`reports/maps/capitals_weather_map.html`](repo
 │   │   ├── config.py        # pydantic Settings (nested BaseModels) built from .env; cached get_settings(), MLflow setup
 │   │   ├── plotting.py      # matplotlib style + palette helpers
 │   │   ├── metrics.py       # regression metrics
+│   │   ├── timeseries.py    # per-city rolling-median baseline, month-start helper
 │   │   └── mlflow_utils.py  # MLflow logging helpers
 │   ├── data/
-│   │   ├── download.py      # Kaggle download (kagglehub, REST fallback)
-│   │   ├── clean.py         # validity, dedup, corrupted batches, outliers, imputation, continents
-│   │   └── features.py      # daily panel, lags/rolling/calendar/diurnal features, split, scaler
+│   │   ├── download.py      # stage `download` (KaggleDownloader): kagglehub, REST fallback
+│   │   └── clean.py         # stage `clean` (DataCleaner): validity, dedup, corrupted batches, outliers, imputation, continents
+│   ├── enums/               # all shared constants, grouped by topic
+│   │   ├── models.py        # PanelModel / GlobalModel / PanelEnsemble enums + per-stage constants
+│   │   ├── columns.py       # named column groups (cleaning, panel, predictions, global series)
+│   │   ├── splits.py        # Split enum (train / val / test)
+│   │   ├── geography.py     # continent order/codes, country fixes
+│   │   ├── labels.py        # display labels for variables
+│   │   ├── palette.py       # figure colours and colour maps
+│   │   ├── analysis.py      # constants of the download / EDA / anomaly / analyses stages
+│   │   └── time.py          # calendar constants
+│   ├── feature_engineering/
+│   │   ├── daily_panel.py   # regular daily grid per city, short gaps interpolated
+│   │   ├── panel_features.py# lags/rolling/calendar/diurnal/geo features + next-day target
+│   │   ├── global_series.py # global mean series + its trend/Fourier design matrix
+│   │   ├── encoding.py      # cyclical (sin/cos) and continent encoders
+│   │   ├── splits.py        # chronological train/val/test split
+│   │   └── run.py           # stage `features` (FeaturePipeline): builds, scales on train only, saves
 │   ├── analysis/
-│   │   ├── eda.py           # EDA figures
-│   │   ├── anomaly.py       # Isolation Forest, LOF, temporal & batch-level detection
+│   │   ├── eda.py           # stage `eda` (ExploratoryAnalysis): summary table + EDA figures
+│   │   ├── anomaly.py       # stage `anomaly` (AnomalyDetector): Isolation Forest, LOF, temporal & batch-level detection
 │   │   └── decomposition.py # harmonic decomposition of the global series (used by eda + anomaly)
 │   ├── modeling/
-│   │   ├── train.py         # next-day panel models (nested MLflow runs, registry)
-│   │   ├── train_global.py  # multi-step global-series models + 90-day projection
-│   │   ├── ensemble.py      # mean / weighted / stacking ensembles, pyfunc registration
+│   │   ├── train.py         # PanelTrainer: next-day panel models (nested MLflow runs, registry)
+│   │   ├── baselines.py     # PersistenceBaseline (tomorrow = today)
+│   │   ├── train_global.py  # GlobalTrainer: back-test global-series models + 90-day projection
+│   │   ├── global_forecasters.py # one class per global-series model (naive ... SARIMAX)
+│   │   ├── combiners.py     # mean / inverse-RMSE / stacking combiners (weights + intercept)
+│   │   ├── ensemble.py      # stage `ensemble` (PanelEnsembleStage): evaluation, tables, figures, pyfunc registration
 │   │   └── ensemble_model.py# MLflow pyfunc wrapper for the ensemble
 │   └── insights/            # stage `analyses` (entry point: run.py)
-│       ├── common.py        # shared output dir + label dictionaries
-│       ├── climate.py, air_quality.py, feature_importance.py, spatial.py, geographic.py
-│       └── run.py           # runs every analysis, writes reports/metrics/analyses.json, logs to MLflow
+│       ├── common.py        # InsightAnalysis base class (settings + shared figure dir)
+│       ├── climate.py, air_quality.py, feature_importance.py, spatial.py, geographic.py  # one class per analysis
+│       └── run.py           # InsightsPipeline: runs every analysis, writes reports/metrics/analyses.json, logs to MLflow
 ├── tests/                   # pytest: cleaning rules, leakage-free features/split, metrics
 ├── EDA/eda.ipynb            # step-by-step exploratory notebook on the raw data (executed, outputs saved)
 ├── reports/
